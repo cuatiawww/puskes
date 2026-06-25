@@ -351,7 +351,7 @@ export default function IndonesiaStatusMap() {
             <span className="text-xs text-[#4a5858]">{hovered.status}</span>
           </div>
           <p className="mt-0.5 text-xs text-[#6a7878]">
-            Total Faskes:{' '}
+            Total Puskesmas:{' '}
             <span className="font-semibold text-[#2a3838]">{hovered.totalFaskes.toLocaleString('id')}</span>
           </p>
         </div>

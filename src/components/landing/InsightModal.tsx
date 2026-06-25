@@ -34,7 +34,7 @@ interface InsightModalProps {
 
 const STAT_CARDS = [
   { num: '72%', label: 'Tingkat Kepatuhan Nasional', badge: { text: '+2,1%', type: 'up' as const } },
-  { num: '10.123', label: 'Total Faskes Terdaftar', badge: { text: '+312', type: 'up' as const } },
+  { num: '10.123', label: 'Total Puskesmas Terdaftar', badge: { text: '+312', type: 'up' as const } },
   { num: '34', label: 'Provinsi Terevaluasi', badge: { text: '8 kritis', type: 'warn' as const } },
 ]
 
@@ -55,7 +55,7 @@ const FINDINGS = [
     icon: Salad,
     color: 'teal' as const,
     title: 'Kekurangan Tenaga Gizi',
-    desc: 'Rasio ahli gizi di faskes terpencil jauh di bawah standar WHO. Berisiko tinggi terhadap kasus stunting berkelanjutan.',
+    desc: 'Rasio ahli gizi di Puskesmas terpencil jauh di bawah standar WHO. Berisiko tinggi terhadap kasus stunting berkelanjutan.',
   },
 ]
 
@@ -63,7 +63,7 @@ const GAP_ITEMS = [
   { rank: 1, name: 'Ketersediaan Alat Kesehatan', pct: 82, color: '#e24b4a' },
   { rank: 2, name: 'Layanan Kesehatan Anak (MTBS)', pct: 67, color: '#ba7517' },
   { rank: 3, name: 'Tenaga Gizi di Wilayah Terpencil', pct: 61, color: '#185fa5' },
-  { rank: 4, name: 'Sarana Air Bersih Faskes', pct: 54, color: '#639922' },
+  { rank: 4, name: 'Sarana Air Bersih Puskesmas', pct: 54, color: '#639922' },
   { rank: 5, name: 'Sistem Rujukan Berjenjang', pct: 48, color: '#7f77dd' },
 ]
 
@@ -228,7 +228,7 @@ function TabProvinsi() {
           <thead>
             <tr className="border-b border-[#d0e8e8] bg-[#f2fafa]">
               <th className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-[#7a9898]">Provinsi</th>
-              <th className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-[#7a9898]">Faskes</th>
+              <th className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-[#7a9898]">Puskesmas</th>
               <th className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-[#7a9898]">Skor</th>
               <th className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-[#7a9898]">Status</th>
             </tr>
@@ -284,7 +284,7 @@ export default function InsightModal({ open, defaultTab = 'ringkasan', aiInsight
             <LayoutDashboard className="h-5 w-5 text-white" />
           </div>
           <div className="flex-1">
-            <h2 className="text-[17px] font-bold leading-tight text-[#0f3535]">Analisis Kinerja Fasilitas Kesehatan Nasional</h2>
+            <h2 className="text-[17px] font-bold leading-tight text-[#0f3535]">Analisis Kinerja Puskesmas Nasional</h2>
             <p className="mt-0.5 text-[12px] text-[#4f7070]">Data per 11 Mei 2026 - Sumber: Kemenkes RI</p>
           </div>
           <button onClick={onClose} className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-[#bad9d8] bg-white/95 transition-colors hover:border-[#85c5c2] hover:bg-[#f4fbfb]" aria-label="Tutup modal">

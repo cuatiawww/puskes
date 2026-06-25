@@ -411,7 +411,7 @@ export default function RegisterPage() {
                 Daftar sebagai Masyarakat
               </h2>
               <p className="mt-1 text-slate-500 text-sm">
-                Lengkapi data diri Anda untuk pengajuan akun Dashboard Faskes.
+                Lengkapi data diri Anda untuk pengajuan akun Asistensi Kinerja Puskesmas.
               </p>
             </div>
 
@@ -843,7 +843,7 @@ export default function RegisterPage() {
                   >
                     Syarat & Ketentuan
                   </button>{' '}
-                  yang berlaku untuk pendaftaran dan penggunaan akun Dashboard Faskes.
+                  yang berlaku untuk pendaftaran dan penggunaan akun Asistensi Kinerja Puskesmas.
                 </label>
               </div>
 
@@ -973,7 +973,7 @@ export default function RegisterPage() {
             {/* Content */}
             <div className="flex-1 overflow-y-auto px-6 py-5 text-sm text-slate-600 space-y-4 leading-relaxed scrollbar-thin">
               <p>
-                Selamat datang di <strong>Dashboard Fasilitas Kesehatan (Dashboard Faskes)</strong>. Dengan mendaftar dan menggunakan sistem ini, Anda setuju untuk mematuhi ketentuan di bawah ini:
+                Selamat datang di <strong>Asistensi Kinerja Puskesmas</strong>. Dengan mendaftar dan menggunakan sistem ini, Anda setuju untuk mematuhi ketentuan di bawah ini:
               </p>
 
               <h4 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider">1. Hak Akses & Akun</h4>

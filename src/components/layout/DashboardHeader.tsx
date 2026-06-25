@@ -37,8 +37,7 @@ const sidebarMenu = [
   {
     title: 'Menu Utama',
     items: [
-      { label: 'Dashboard Nasional', href: '/dashboard-nasional', icon: Home },
-      { label: 'Dashboard EOC', href: '/', icon: Flame },
+      { label: 'Dashboard', href: '/', icon: Home },
     ],
   },
   {
@@ -54,7 +53,7 @@ const notificationsData = [
   {
     id: 1,
     title: 'Krisis Banjir Bandang',
-    description: 'Terjadi banjir bandang di Bandung. 12 korban luka, faskes tergenang.',
+    description: 'Terjadi banjir bandang di Bandung. 12 korban luka, Puskesmas tergenang.',
     time: '2m',
     icon: Flame,
     iconBg: 'bg-red-50 text-red-600 border-red-100',
@@ -90,7 +89,7 @@ const notificationsData = [
   {
     id: 5,
     title: 'Logistik Darurat NTT',
-    description: 'Faskes melaporkan kekurangan stok obat-obatan darurat.',
+    description: 'Puskesmas melaporkan kekurangan stok obat-obatan darurat.',
     time: '1h',
     icon: Settings,
     iconBg: 'bg-teal-50 text-teal-600 border-teal-100',
@@ -112,14 +111,14 @@ export function DashboardSidebar({ open, onClose }: DashboardSidebarProps) {
         />
       ) : null}
       <aside
-        className={`fixed left-0 top-0 z-40 h-screen w-[280px] border-r border-teal-300/30 bg-gradient-to-b from-[#0f8f96] via-[#076176] to-[#03384d] text-slate-100 shadow-2xl transition-transform duration-300 ${
+        className={`fixed left-0 top-0 z-40 h-screen w-[310px] border-r border-slate-200 bg-white text-slate-800 shadow-2xl transition-transform duration-300 ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="h-[3px] bg-gradient-to-r from-teal-300 via-cyan-200 to-transparent" />
-        <div className="flex items-start justify-between gap-3 border-b border-teal-200/20 px-4 py-4">
+        <div className="h-[3px] bg-teal-600" />
+        <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-5 bg-[#fafcfc]">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/15 bg-white/95 p-1.5 shadow-sm">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-teal-100 bg-white p-1.5 shadow-sm">
               <Image
                 src="/kemenkes.png"
                 alt="Logo Kementerian Kesehatan"
@@ -130,30 +129,30 @@ export function DashboardSidebar({ open, onClose }: DashboardSidebarProps) {
               />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-bold tracking-wide text-white">FASILITAS KESEHATAN</p>
-              <p className="mt-0.5 text-[11px] text-teal-50/80">Kementerian Kesehatan RI</p>
+              <p className="text-sm font-extrabold tracking-wide text-slate-900">ASISTENSI PUSKESMAS</p>
+              <p className="mt-0.5 text-[11px] font-medium text-slate-500">Kementerian Kesehatan RI</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Tutup sidebar"
-            className="rounded-lg p-1 text-teal-50/80 transition hover:bg-white/10 hover:text-white"
+            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
-        <nav className="h-[calc(100vh-80px)] space-y-5 overflow-y-auto px-3 py-4">
+        <nav className="h-[calc(100vh-80px)] space-y-5 overflow-y-auto px-3 py-4 bg-white">
           {sidebarMenu.map((group) => (
             <section key={group.title}>
-              <p className="px-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-300">
+              <p className="px-2 text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">
                 {group.title}
               </p>
               <div className="mt-2 space-y-1.5">
                 {group.items.map((item) => {
                   const Icon = item.icon
                   const active = item.href !== '#' && pathname === item.href
-
+ 
                   return (
                     <Link
                       key={item.label}
@@ -162,10 +161,10 @@ export function DashboardSidebar({ open, onClose }: DashboardSidebarProps) {
                         if (item.href === '#') event.preventDefault()
                         else onClose()
                       }}
-                      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold uppercase tracking-[0.03em] transition ${
+                      className={`flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold uppercase tracking-[0.03em] transition ${
                         active
-                          ? 'bg-white/14 font-semibold text-white shadow-[inset_0_0_0_1px_rgba(94,234,212,0.55)]'
-                          : 'text-teal-50/85 hover:bg-white/10 hover:text-white'
+                          ? 'bg-teal-50 text-teal-700 font-extrabold shadow-[inset_0_0_0_1px_rgba(20,184,166,0.22)]'
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                       }`}
                     >
                       <Icon className="h-4 w-4" />
@@ -224,8 +223,8 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
   }, [user])
   const initialName = isAuthenticated ? (user?.nama_lengkap || user?.username || 'Pengguna') : 'Tamu (Guest)'
   const roleName = isAuthenticated ? (user?.level_name || (user?.level_user_id === 1 ? 'Super Administrator' : 'Admin')) : 'Akses Publik'
-  const userEmail = isAuthenticated ? (user?.email || `${user?.username || 'admin'}@faskes.go.id`) : 'guest@faskes.go.id'
-  const accessLabel = isAuthenticated ? (user?.wilayah_scope?.access_label || 'Pusat pemantauan nasional fasilitas kesehatan') : 'Pusat pemantauan publik fasilitas kesehatan'
+  const userEmail = isAuthenticated ? (user?.email || `${user?.username || 'admin'}@puskesmas.go.id`) : 'guest@puskesmas.go.id'
+  const accessLabel = isAuthenticated ? (user?.wilayah_scope?.access_label || 'Pusat pemantauan nasional Puskesmas') : 'Pusat pemantauan publik Puskesmas'
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
@@ -280,12 +279,12 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
               <div className="min-w-0 border-teal-200/80 md:border-l md:pl-5">
                 <h1 className="max-w-[720px] text-2xl font-extrabold leading-tight tracking-normal text-slate-900 md:text-3xl">
                   {pathname === '/' || pathname === '/dashboard-kejadian'
-                    ? 'PEMETAAN KRISIS KESEHATAN AKIBAT BENCANA'
+                    ? 'ASISTENSI KINERJA PUSKESMAS'
                     : 'DASHBOARD INDIKATOR PENILAIAN KINERJA FASILITAS KESEHATAN'}
                 </h1>
                 <p className="mt-2 max-w-[760px] text-sm leading-relaxed text-slate-600 md:text-base">
                   {pathname === '/' || pathname === '/dashboard-kejadian'
-                    ? `Analisis spasial kejadian bencana dan dampaknya terhadap sumber daya kesehatan secara real-time di wilayah ${activeRegion}.`
+                    ? `Asistensi penilaian kualitas pelayanan kesehatan primer dan evaluasi capaian indikator kinerja Puskesmas secara real-time di wilayah ${activeRegion}.`
                     : 'Pantau perkembangan fasilitas kesehatan di seluruh Indonesia secara real-time.'}
                 </p>
               </div>

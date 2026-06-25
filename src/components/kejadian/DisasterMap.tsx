@@ -15,7 +15,7 @@ import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
 import TileLayer from 'ol/layer/Tile'
 import OSM from 'ol/source/OSM'
-import { Fill, Stroke, Style, Circle as CircleStyle, Icon } from 'ol/style'
+import { Fill, Stroke, Style, Circle as CircleStyle, Icon, Text } from 'ol/style'
 import { fromLonLat } from 'ol/proj'
 import { defaults as defaultControls } from 'ol/control'
 import Feature from 'ol/Feature'
@@ -29,8 +29,8 @@ import 'ol/ol.css'
 
 interface MarkerData {
   kode_trans: string
-  tgl_kejadian: string
-  jenis_bencana: string
+  tgl_kejadian?: string
+  jenis_bencana: string // holds name of Puskesmas
   kategori_bencana?: string
   lat: number
   lng: number
@@ -41,6 +41,12 @@ interface MarkerData {
   topografi?: string
   total_korban: number
   icon_file?: string
+  is_ranap?: boolean
+  karakteristik?: 'Biasa' | 'Terpencil' | 'Sangat Terpencil'
+  alkes_pct?: number
+  obat_pct?: number
+  nakes_pct?: number
+  status_evaluasi?: 'Baik' | 'Sedang' | 'Kurang'
 }
 
 interface DisasterMapProps {
@@ -54,6 +60,16 @@ interface MarkerPopupState {
   data: MarkerData
   x: number   // pixel x di dalam container peta
   y: number   // pixel y di dalam container peta
+}
+
+interface HoverTooltipState {
+  type: 'provinsi' | 'kabupaten' | 'marker'
+  name: string
+  totalPuskesmas: number
+  capaianIlp: number
+  statusDokter: string
+  x: number
+  y: number
 }
 
 // ─────────────────────────────────────────────
@@ -83,49 +99,93 @@ const getFeatureName = (feature: any, level: 'provinsi' | 'kabupaten') => {
   return ''
 }
 
-/** Warna choropleth berdasarkan jumlah kejadian */
-const choroplethColor = (count: number) => {
-  if (count === 0) return 'rgba(241, 245, 249, 0.15)'
-  if (count <= 10) return '#facc15' // Kuning (1 - 10)
-  if (count <= 30) return '#f97316' // Oranye (11 - 30)
-  if (count <= 50) return '#ef4444' // Coral Red (31 - 50)
-  return '#991b1b' // Deep Crimson (> 50)
+function hexToRgbA(hex: string, alpha = 1) {
+  if (hex.startsWith('rgba') || hex.startsWith('rgb') || hex.startsWith('hsl')) return hex;
+  let c: any;
+  if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
+    c = hex.substring(1).split('');
+    if (c.length === 3) {
+      c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+    }
+    c = '0x' + c.join('');
+    return 'rgba(' + [(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',') + ',' + alpha + ')';
+  }
+  return hex;
+}
+
+/** Warna choropleth berdasarkan persentase capaian (Kemenkes Color Scheme) */
+const choroplethColorByPct = (
+  pct: number,
+  thresholdAman: number,
+  thresholdCukup: number,
+  colorAman: string,
+  colorCukup: string,
+  colorKritis: string
+) => {
+  if (pct === 0) return 'rgba(241, 245, 249, 0.55)'
+  if (pct >= thresholdAman) return hexToRgbA(colorAman, 0.75)
+  if (pct >= thresholdCukup) return hexToRgbA(colorCukup, 0.75)
+  return hexToRgbA(colorKritis, 0.75)
 }
 
 /** Style choropleth OL */
-const choroplethStyle = (count: number) =>
+const choroplethStyleByPct = (
+  pct: number,
+  thresholdAman: number,
+  thresholdCukup: number,
+  colorAman: string,
+  colorCukup: string,
+  colorKritis: string
+) =>
   new Style({
-    fill: new Fill({ color: choroplethColor(count) }),
+    fill: new Fill({ color: choroplethColorByPct(pct, thresholdAman, thresholdCukup, colorAman, colorCukup, colorKritis) }),
     stroke: new Stroke({
-      color: count === 0 ? 'rgba(148, 163, 184, 0.4)' : '#ffffff',
-      width: count === 0 ? 0.8 : 1.2,
+      color: pct === 0 ? 'rgba(148, 163, 184, 0.4)' : '#ffffff',
+      width: pct === 0 ? 0.8 : 1.2,
     }),
+    text: pct > 0 ? new Text({
+      text: `${pct}%`,
+      font: 'bold 11px Inter, sans-serif',
+      fill: new Fill({ color: '#1e293b' }),
+      stroke: new Stroke({ color: '#ffffff', width: 2 }),
+      textAlign: 'center',
+      textBaseline: 'middle',
+    }) : undefined,
   })
 
-/** Warna pin marker berdasarkan total korban */
-const pinColor = (totalKorban: number) => {
-  if (totalKorban === 0) return '#94a3b8'
-  if (totalKorban <= 5) return '#facc15'
-  if (totalKorban <= 20) return '#f97316'
-  return '#dc2626'
+/** Warna pin marker berdasarkan status evaluasi / mode */
+const pinColor = (status?: string) => {
+  if (status === 'Baik') return '#10b981'
+  if (status === 'Sedang') return '#f59e0b'
+  return '#ef4444'
+}
+
+const getMarkerColor = (
+  m: MarkerData,
+  mode: 'blud' | 'ilp' | 'pkp' | 'gabungan',
+  thresholdAman: number,
+  thresholdCukup: number,
+  colorAman: string,
+  colorCukup: string,
+  colorKritis: string
+) => {
+  return pinColor(m.status_evaluasi)
 }
 
 /** Style OL untuk marker pin */
-const markerStyle = (iconFile: string | undefined, totalKorban: number) => {
-  if (iconFile) {
-    const backendUrl = process.env.NEXT_PUBLIC_SIPKK_BACKEND_BASE_URL || ''
-    const src = `${backendUrl}/app_asset/icon/data_bencana/${iconFile}`
-    return new Style({
-      image: new Icon({
-        src: src,
-        scale: 0.8,
-      }),
-    })
-  }
+const markerStyle = (
+  m: MarkerData,
+  mode: 'blud' | 'ilp' | 'pkp' | 'gabungan',
+  thresholdAman: number,
+  thresholdCukup: number,
+  colorAman: string,
+  colorCukup: string,
+  colorKritis: string
+) => {
   return new Style({
     image: new CircleStyle({
-      radius: 7,
-      fill: new Fill({ color: pinColor(totalKorban) }),
+      radius: 8,
+      fill: new Fill({ color: pinColor(m.status_evaluasi) }),
       stroke: new Stroke({ color: '#ffffff', width: 2 }),
     }),
   })
@@ -226,6 +286,102 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
     setMarkerPopup(null)
   }, [userScope])
 
+  const [mapViewMode, setMapViewMode] = useState<'blud' | 'ilp' | 'pkp' | 'gabungan'>('blud')
+  const [thresholdAman, setThresholdAman] = useState<number>(80)
+  const [thresholdCukup, setThresholdCukup] = useState<number>(40)
+  const [colorAman, setColorAman] = useState<string>('#0f766e')
+  const [colorCukup, setColorCukup] = useState<string>('#f59e0b')
+  const [colorKritis, setColorKritis] = useState<string>('#ef4444')
+
+  const mapViewModeRef = useRef(mapViewMode)
+  const thresholdAmanRef = useRef(thresholdAman)
+  const thresholdCukupRef = useRef(thresholdCukup)
+  const colorAmanRef = useRef(colorAman)
+  const colorCukupRef = useRef(colorCukup)
+  const colorKritisRef = useRef(colorKritis)
+
+  useEffect(() => {
+    mapViewModeRef.current = mapViewMode
+    thresholdAmanRef.current = thresholdAman
+    thresholdCukupRef.current = thresholdCukup
+    colorAmanRef.current = colorAman
+    colorCukupRef.current = colorCukup
+    colorKritisRef.current = colorKritis
+  }, [mapViewMode, thresholdAman, thresholdCukup, colorAman, colorCukup, colorKritis])
+
+  const [hoverTooltip, setHoverTooltip] = useState<HoverTooltipState | null>(null)
+  const setHoverTooltipRef = useRef(setHoverTooltip)
+  useEffect(() => {
+    setHoverTooltipRef.current = setHoverTooltip
+  }, [setHoverTooltip])
+
+  const getRegionMetric = (name: string, level: 'provinsi' | 'kabupaten') => {
+    const key = cleanKey(name)
+    
+    const matched = markers.filter(m => {
+      const mKey = level === 'provinsi' ? m.provinsi : m.kabupaten
+      return cleanKey(mKey) === key
+    })
+    
+    if (matched.length > 0) {
+      const total = matched.length
+      if (mapViewMode === 'blud') {
+        const baikCount = matched.filter(m => m.status_evaluasi === 'Baik').length
+        return Math.round((baikCount / total) * 100)
+      } else if (mapViewMode === 'ilp') {
+        const sumAlkes = matched.reduce((sum, m) => sum + (m.alkes_pct || 0), 0)
+        return Math.round(sumAlkes / total)
+      } else if (mapViewMode === 'pkp') {
+        const completeCount = matched.filter(m => (m.nakes_pct || 0) >= 80).length
+        return Math.round((completeCount / total) * 100)
+      } else {
+        // gabungan
+        const bludBaikPct = (matched.filter(m => m.status_evaluasi === 'Baik').length / total) * 100
+        const avgAlkes = matched.reduce((sum, m) => sum + (m.alkes_pct || 0), 0) / total
+        const pkpCompletePct = (matched.filter(m => (m.nakes_pct || 0) >= 80).length / total) * 100
+        return Math.round((bludBaikPct + avgAlkes + pkpCompletePct) / 3)
+      }
+    }
+    
+    // Fallback values for other provinces to look realistic and dynamic as requested
+    if (level === 'provinsi') {
+      let baseVal = 65 // default base
+      if (key === 'DKIJAKARTA' || key === 'DIYOGYAKARTA' || key === 'BALI') {
+        baseVal = 85
+      } else if (key === 'JAWATENGAH' || key === 'JAWABARAT' || key === 'JAWATIMUR') {
+        baseVal = 70
+      } else if (key === 'PAPUA' || key === 'PAPUABARAT' || key === 'MALUKU') {
+        baseVal = 35
+      } else {
+        let hash = 0
+        for (let i = 0; i < key.length; i++) hash += key.charCodeAt(i)
+        baseVal = 40 + (hash % 40) // 40 to 80
+      }
+
+      // Add dynamic offset based on mapViewMode to show actual color transitions on map mode switch
+      const modeHash = mapViewMode === 'blud' ? 12 : mapViewMode === 'ilp' ? 27 : mapViewMode === 'pkp' ? 43 : 19
+      let hash = 0
+      for (let i = 0; i < key.length; i++) hash += key.charCodeAt(i)
+      const offset = ((hash + modeHash) % 31) - 15 // range of -15% to +15%
+      
+      return Math.max(15, Math.min(98, baseVal + offset))
+    }
+    
+    // Fallback values for kabupaten to look realistic and dynamic based on the parent province
+    if (level === 'kabupaten') {
+      let baseVal = 60
+      let hash = 0
+      for (let i = 0; i < key.length; i++) hash += key.charCodeAt(i)
+      baseVal = 45 + (hash % 35) // 45 to 80
+      
+      const modeHash = mapViewMode === 'blud' ? 8 : mapViewMode === 'ilp' ? 19 : mapViewMode === 'pkp' ? 31 : 14
+      const offset = ((hash + modeHash) % 25) - 12 // range of -12% to +12%
+      return Math.max(15, Math.min(98, baseVal + offset))
+    }
+    
+    return 0
+  }
+
   // ─────────────────────────────────────────────
   // Computed
   // ─────────────────────────────────────────────
@@ -233,14 +389,12 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
   // 1. Get filtered markers first based on exclusions
   const filteredMarkers = useMemo(() => {
     return markers.filter((m) => {
-      const cat = String(m.kategori_bencana || '1')
+      const cat = m.status_evaluasi === 'Baik' ? '1' : m.status_evaluasi === 'Sedang' ? '2' : '3'
       if (excludedCategories.has(cat)) return false
-      if (excludedTypes.has(m.jenis_bencana)) return false
+      if (excludedTypes.has(m.karakteristik || 'Biasa')) return false
       return true
     })
   }, [markers, excludedCategories, excludedTypes])
-
-
 
   // 2. Compute category totals from all markers
   const categoryCounts = useMemo(() => {
@@ -248,23 +402,21 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
     let nonAlam = 0
     let sosial = 0
     markers.forEach((m) => {
-      const cat = String(m.kategori_bencana || '1')
-      if (cat === '1') alam++
-      else if (cat === '2') nonAlam++
-      else if (cat === '3') sosial++
+      if (m.status_evaluasi === 'Baik') alam++
+      else if (m.status_evaluasi === 'Sedang') nonAlam++
+      else if (m.status_evaluasi === 'Kurang') sosial++
     })
     return { alam, nonAlam, sosial }
   }, [markers])
 
-  // 3. Compute disaster types breakdown from all markers
+  // 3. Compute characteristic types breakdown from all markers
   const disasterTypesBreakdown = useMemo(() => {
     const counts = new Map<string, number>()
     const typeToCategory = new Map<string, string>()
     markers.forEach((m) => {
-      counts.set(m.jenis_bencana, (counts.get(m.jenis_bencana) || 0) + 1)
-      if (m.kategori_bencana !== undefined && m.kategori_bencana !== null) {
-        typeToCategory.set(m.jenis_bencana, String(m.kategori_bencana))
-      }
+      const char = m.karakteristik || 'Biasa'
+      counts.set(char, (counts.get(char) || 0) + 1)
+      typeToCategory.set(char, m.status_evaluasi === 'Baik' ? '1' : m.status_evaluasi === 'Sedang' ? '2' : '3')
     })
     return Array.from(counts.entries()).map(([name, count]) => ({
       name,
@@ -352,7 +504,6 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
       const polyFeature = map.forEachFeatureAtPixel(evt.pixel, (f) => f)
 
       if (!polyFeature) {
-        setActivePopup(null)
         setMarkerPopup(null)
         return
       }
@@ -364,55 +515,119 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
       const isKabMode = currentScope?.mode === 'kabupaten'
 
       if (!isProvMode && !isKabMode) {
-        // National mode → clicked province
+        // National mode → clicked province → lock filter immediately!
         const provName = getFeatureName(polyFeature, 'provinsi')
-        if (!provName) return
-
-        const provCleaned = cleanKey(provName)
-        const provMarkers = markersRef.current.filter((m) => cleanKey(m.provinsi) === provCleaned)
-
-        // Group by kabupaten
-        const kabMap = new Map<string, { count: number; totalKorban: number }>()
-        provMarkers.forEach((m) => {
-          const kab = m.kabupaten || 'LAINNYA'
-          const existing = kabMap.get(kab) || { count: 0, totalKorban: 0 }
-          existing.count++
-          existing.totalKorban += m.total_korban || 0
-          kabMap.set(kab, existing)
-        })
-
-        const breakdown = Array.from(kabMap.entries())
-          .map(([name, s]) => ({ name, count: s.count, totalKorban: s.totalKorban }))
-          .sort((a, b) => b.count - a.count)
-
-        setActivePopup({
-          type: 'provinsi',
-          name: provName,
-          stats: {
-            totalEvents: provMarkers.length,
-            totalKorban: provMarkers.reduce((s, m) => s + (m.total_korban || 0), 0),
-            breakdown,
-          },
-        })
-      } else {
-        // Province/kabupaten mode → clicked kabupaten
-        const kabName = getFeatureName(polyFeature, 'kabupaten')
-        if (!kabName) return
-
-        const kabCleaned = cleanKey(kabName)
-        const kabMarkers = markersRef.current.filter((m) => cleanKey(m.kabupaten) === kabCleaned)
-
-        setActivePopup({
-          type: 'kabupaten',
-          name: kabName,
-          stats: {
-            totalEvents: kabMarkers.length,
-            totalKorban: kabMarkers.reduce((s, m) => s + (m.total_korban || 0), 0),
-            breakdown: [],
-            eventsList: kabMarkers,
-          },
-        })
+        if (provName) {
+          onSelectProvinceRef.current?.(provName)
+        }
       }
+    })
+
+    // ── Hover/pointermove handler for glassmorphism Tooltip ──
+    map.on('pointermove', (evt) => {
+      if (evt.dragging) {
+        setHoverTooltipRef.current?.(null)
+        return
+      }
+      
+      const pixel = map.getEventPixel(evt.originalEvent)
+      const currentMode = mapViewModeRef.current
+      
+      // 1. Check if hovering a marker pin (Puskesmas)
+      const markerFeature = map.forEachFeatureAtPixel(
+        pixel,
+        (f) => f,
+        { layerFilter: (l) => l === markerLayerRef.current }
+      )
+      
+      if (markerFeature) {
+        const m = markerFeature.get('markerData') as MarkerData
+        const isRanapText = m.is_ranap ? 'Rawat Inap' : 'Non Rawat Inap'
+        
+        let val = 0
+        if (currentMode === 'ilp') {
+          val = m.alkes_pct || 0
+        } else if (currentMode === 'pkp') {
+          val = m.nakes_pct || 0
+        } else if (currentMode === 'gabungan') {
+          const bludVal = m.status_evaluasi === 'Baik' ? 100 : m.status_evaluasi === 'Sedang' ? 60 : 30
+          val = Math.round((bludVal + (m.alkes_pct || 0) + (m.nakes_pct || 0)) / 3)
+        } else {
+          val = m.status_evaluasi === 'Baik' ? 100 : m.status_evaluasi === 'Sedang' ? 60 : 30
+        }
+        
+        setHoverTooltipRef.current?.({
+          type: 'marker',
+          name: m.jenis_bencana,
+          totalPuskesmas: 1,
+          capaianIlp: val,
+          statusDokter: isRanapText,
+          x: evt.pixel[0],
+          y: evt.pixel[1],
+        })
+        map.getTargetElement().style.cursor = 'pointer'
+        return
+      }
+      
+      // 2. Check if hovering a polygon (province or kabupaten)
+      const polyFeature = map.forEachFeatureAtPixel(
+        pixel,
+        (f) => f,
+        { layerFilter: (l) => l === provinceLayerRef.current || l === kabupatenLayerRef.current }
+      )
+      
+      if (polyFeature) {
+        const currentScope = userScopeRef.current
+        const isProvMode = currentScope?.mode === 'provinsi'
+        
+        const provName = getFeatureName(polyFeature, 'provinsi')
+        const kabName = getFeatureName(polyFeature, 'kabupaten')
+        const activeName = isProvMode ? kabName : provName
+        
+        if (activeName) {
+          const cleanName = cleanKey(activeName)
+          const matched = markersRef.current.filter(m => {
+            const mKey = isProvMode ? m.kabupaten : m.provinsi
+            return cleanKey(mKey) === cleanName
+          })
+          
+          let totalPkm = matched.length
+          let metricVal = getRegionMetric(activeName, isProvMode ? 'kabupaten' : 'provinsi')
+          
+          if (totalPkm === 0) {
+            if (!isProvMode) {
+              if (cleanName === 'DKIJAKARTA' || cleanName === 'DIYOGYAKARTA' || cleanName === 'BALI') {
+                totalPkm = 45
+              } else if (cleanName === 'JAWATENGAH' || cleanName === 'JAWABARAT' || cleanName === 'JAWATIMUR') {
+                totalPkm = 120
+              } else {
+                let hash = 0
+                for (let i = 0; i < cleanName.length; i++) hash += cleanName.charCodeAt(i)
+                totalPkm = 15 + (hash % 25)
+              }
+            } else {
+              let hash = 0
+              for (let i = 0; i < cleanName.length; i++) hash += cleanName.charCodeAt(i)
+              totalPkm = 5 + (hash % 10)
+            }
+          }
+          
+          setHoverTooltipRef.current?.({
+            type: isProvMode ? 'kabupaten' : 'provinsi',
+            name: activeName,
+            totalPuskesmas: totalPkm,
+            capaianIlp: metricVal,
+            statusDokter: '', // not used in polygon tooltips
+            x: evt.pixel[0],
+            y: evt.pixel[1],
+          })
+          map.getTargetElement().style.cursor = 'pointer'
+          return
+        }
+      }
+      
+      setHoverTooltipRef.current?.(null)
+      map.getTargetElement().style.cursor = ''
     })
 
     mapInstanceRef.current = map
@@ -571,7 +786,8 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
     const targetKabKey = cleanKey(userScope?.kabupaten?.label || '')
 
     provinceLayer.setStyle((feature: any) => {
-      const provKey = cleanKey(feature.get('provinsi'))
+      const provName = getFeatureName(feature, 'provinsi')
+      const provKey = cleanKey(provName)
       if (isProvMode || isKabMode) {
         // Selected province → transparent (kabupaten layer shows through)
         if (provKey === targetProvKey) {
@@ -583,27 +799,27 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
           stroke: new Stroke({ color: 'rgba(203, 213, 225, 0.4)', width: 1 }),
         })
       }
-      // National choropleth
-      return choroplethStyle(provinceCounts.get(provKey) || 0)
+      // National choropleth based on selected mode
+      const pct = getRegionMetric(provName, 'provinsi')
+      return choroplethStyleByPct(pct, thresholdAman, thresholdCukup, colorAman, colorCukup, colorKritis)
     })
 
     kabupatenLayer.setStyle((feature: any) => {
-      const kabKey = cleanKey(feature.get('nama_kab') || feature.get('kabupaten'))
-      const count = kabupatenCounts.get(kabKey) || 0
+      const kabName = getFeatureName(feature, 'kabupaten')
+      const kabKey = cleanKey(kabName)
       if (isKabMode && kabKey !== targetKabKey) {
         return new Style({
           fill: new Fill({ color: 'rgba(226, 232, 240, 0.5)' }),
           stroke: new Stroke({ color: 'rgba(203, 213, 225, 0.4)', width: 0.8 }),
         })
       }
-      return choroplethStyle(count)
+      const pct = getRegionMetric(kabName, 'kabupaten')
+      return choroplethStyleByPct(pct, thresholdAman, thresholdCukup, colorAman, colorCukup, colorKritis)
     })
 
     provinceLayer.changed()
     kabupatenLayer.changed()
-  }, [userScope, provinceCounts, kabupatenCounts])
-
-
+  }, [userScope, mapViewMode, markers, thresholdAman, thresholdCukup, colorAman, colorCukup, colorKritis])
 
   // ─────────────────────────────────────────────
   // Sync marker features when markers/visibility changes
@@ -613,7 +829,6 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
     const markerLayer = markerLayerRef.current
     if (!markerLayer) return
 
-    const map = mapInstanceRef.current
     const source = markerLayer.getSource()!
     source.clear()
 
@@ -631,27 +846,27 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
           geometry: new Point(fromLonLat([m.lng, m.lat])),
           markerData: m,
         })
-        feature.setStyle(markerStyle(m.icon_file, m.total_korban))
+        feature.setStyle(markerStyle(m, mapViewMode, thresholdAman, thresholdCukup, colorAman, colorCukup, colorKritis))
         return feature
       })
 
     source.addFeatures(features)
-  }, [filteredMarkers, showMarkers])
+  }, [filteredMarkers, showMarkers, mapViewMode, thresholdAman, thresholdCukup, colorAman, colorCukup, colorKritis])
 
   // ─────────────────────────────────────────────
   // Legend / UI data
   // ─────────────────────────────────────────────
 
   const markerTitle = userScope?.mode === 'provinsi' || userScope?.mode === 'kabupaten'
-    ? 'SEBARAN KEJADIAN PER KABUPATEN/KOTA'
-    : 'SEBARAN KEJADIAN PER PROVINSI'
+    ? 'SEBARAN PUSKESMAS PER KABUPATEN/KOTA'
+    : 'SEBARAN PUSKESMAS PER PROVINSI'
 
   const choroplethLegend = [
-    { label: '0 kejadian', color: 'rgba(241, 245, 249, 0.8)' },
-    { label: '1 – 10 kejadian', color: '#facc15' },
-    { label: '11 – 30 kejadian', color: '#f97316' },
-    { label: '31 – 50 kejadian', color: '#ef4444' },
-    { label: '> 50 kejadian', color: '#991b1b' },
+    { label: '0 Puskesmas', color: 'rgba(241, 245, 249, 0.8)' },
+    { label: '1 – 2 Puskesmas', color: '#ccfbf1' },
+    { label: '3 – 4 Puskesmas', color: '#99f6e4' },
+    { label: '5 – 6 Puskesmas', color: '#2dd4bf' },
+    { label: '> 6 Puskesmas', color: '#0f766e' },
   ]
 
 
@@ -713,6 +928,123 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
 
             {/* Panel body */}
             <div className="flex-1 overflow-y-auto p-4 space-y-5">
+              {/* ── Mode Visualisasi Peta ── */}
+              <div>
+                <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-3">
+                  Mode Visualisasi Peta
+                </p>
+                <div className="space-y-2">
+                  {[
+                    { id: 'blud', label: 'Status BLUD', desc: 'Tata kelola administratif puskesmas' },
+                    { id: 'ilp', label: 'Kesiapan ILP', desc: 'Kelengkapan alat kesehatan (ILP)' },
+                    { id: 'pkp', label: 'Evaluasi PKP', desc: 'Ketersediaan dokter & tenaga medis' },
+                    { id: 'gabungan', label: 'Tata Kelola Baik (Gabungan)', desc: 'Gabungan evaluasi BLUD, ILP, dan PKP' },
+                  ].map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => setMapViewMode(m.id as any)}
+                      className={`flex w-full flex-col rounded-xl border p-3 text-left transition-all ${
+                        mapViewMode === m.id
+                          ? 'border-teal-500 bg-teal-50/40 text-teal-900 shadow-sm'
+                          : 'border-slate-100 bg-slate-50 text-slate-700 hover:bg-slate-100/75'
+                      }`}
+                    >
+                      <span className="text-xs font-bold">{m.label}</span>
+                      <span className="text-[10px] text-slate-400 font-medium leading-tight mt-0.5">{m.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── Kustomisasi Ambang Batas & Warna ── */}
+              <div>
+                <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-3">
+                  Kustomisasi Ambang Batas & Warna
+                </p>
+                <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-3.5 space-y-4">
+                  {/* Threshold Aman */}
+                  <div>
+                    <div className="flex justify-between text-xs font-bold text-slate-700 mb-1.5">
+                      <span>Batas Aman</span>
+                      <span className="text-teal-700">≥ {thresholdAman}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={thresholdCukup + 1}
+                      max="100"
+                      value={thresholdAman}
+                      onChange={(e) => setThresholdAman(parseInt(e.target.value))}
+                      className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
+                    />
+                  </div>
+
+                  {/* Threshold Cukup */}
+                  <div>
+                    <div className="flex justify-between text-xs font-bold text-slate-700 mb-1.5">
+                      <span>Batas Cukup</span>
+                      <span className="text-amber-600">≥ {thresholdCukup}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max={thresholdAman - 1}
+                      value={thresholdCukup}
+                      onChange={(e) => setThresholdCukup(parseInt(e.target.value))}
+                      className="w-full h-1.5 bg-slate-205 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                    />
+                  </div>
+
+                  {/* Color Pickers */}
+                  <div className="border-t border-slate-200/60 pt-3 space-y-2.5">
+                    <p className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">
+                      Warna Legenda & Wilayah
+                    </p>
+
+                    {/* Color Aman */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-650">Zona Aman</span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={colorAman}
+                          onChange={(e) => setColorAman(e.target.value)}
+                          className="h-6 w-6 cursor-pointer rounded border border-slate-300 p-0"
+                        />
+                        <span className="text-[10px] font-mono text-slate-400 uppercase">{colorAman}</span>
+                      </div>
+                    </div>
+
+                    {/* Color Cukup */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-655">Zona Cukup</span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={colorCukup}
+                          onChange={(e) => setColorCukup(e.target.value)}
+                          className="h-6 w-6 cursor-pointer rounded border border-slate-300 p-0"
+                        />
+                        <span className="text-[10px] font-mono text-slate-400 uppercase">{colorCukup}</span>
+                      </div>
+                    </div>
+
+                    {/* Color Kritis */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-660">Zona Kritis</span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={colorKritis}
+                          onChange={(e) => setColorKritis(e.target.value)}
+                          className="h-6 w-6 cursor-pointer rounded border border-slate-300 p-0"
+                        />
+                        <span className="text-[10px] font-mono text-slate-400 uppercase">{colorKritis}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* ── Tampilan section ── */}
               <div>
                 <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-3">
@@ -830,19 +1162,19 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
 
               {/* ── Filter & Kategori Section ── */}
               <div className={showMarkers ? "space-y-5 transition-opacity" : "space-y-5 opacity-40 pointer-events-none transition-opacity"}>
-                {/* ── Kategori Bencana ── */}
+                {/* ── Status Evaluasi ── */}
                 <div>
                   <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-3">
-                    Kategori Bencana
+                    Status Evaluasi
                   </p>
                   <div className="space-y-2">
-                    {/* Bencana Alam */}
+                    {/* Evaluasi Baik */}
                     <div
                       onClick={() => toggleCategory('1')}
                       className="flex cursor-pointer items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2 hover:bg-teal-50/40 hover:border-teal-100 transition-all"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-slate-700">Bencana Alam</span>
+                        <span className="text-xs font-semibold text-slate-700">Baik</span>
                         <span className="rounded-md bg-white border border-slate-200 px-1.5 py-0.5 text-[9px] font-bold text-slate-500">{categoryCounts.alam}</span>
                       </div>
                       <div
@@ -854,13 +1186,13 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
                       </div>
                     </div>
 
-                    {/* Bencana Non-Alam */}
+                    {/* Evaluasi Sedang */}
                     <div
                       onClick={() => toggleCategory('2')}
                       className="flex cursor-pointer items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2 hover:bg-teal-50/40 hover:border-teal-100 transition-all"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-slate-700">Bencana Non-Alam</span>
+                        <span className="text-xs font-semibold text-slate-700">Sedang</span>
                         <span className="rounded-md bg-white border border-slate-200 px-1.5 py-0.5 text-[9px] font-bold text-slate-500">{categoryCounts.nonAlam}</span>
                       </div>
                       <div
@@ -872,13 +1204,13 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
                       </div>
                     </div>
 
-                    {/* Bencana Sosial */}
+                    {/* Evaluasi Kurang */}
                     <div
                       onClick={() => toggleCategory('3')}
                       className="flex cursor-pointer items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2 hover:bg-teal-50/40 hover:border-teal-100 transition-all"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-slate-700">Bencana Sosial</span>
+                        <span className="text-xs font-semibold text-slate-700">Kurang</span>
                         <span className="rounded-md bg-white border border-slate-200 px-1.5 py-0.5 text-[9px] font-bold text-slate-500">{categoryCounts.sosial}</span>
                       </div>
                       <div
@@ -892,14 +1224,14 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
                   </div>
                 </div>
 
-                {/* ── Detail Jenis Kejadian ── */}
+                {/* ── Karakteristik Wilayah ── */}
                 <div>
                   <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-3">
-                    Jenis Kejadian
+                    Karakteristik Wilayah
                   </p>
                   {disasterTypesBreakdown.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 px-3 py-4 text-center">
-                      <p className="text-[11px] text-slate-400 italic">Tidak ada jenis kejadian</p>
+                      <p className="text-[11px] text-slate-400 italic">Tidak ada karakteristik</p>
                     </div>
                   ) : (
                     <div className="max-h-[260px] overflow-y-auto pr-1 space-y-1.5 border border-slate-100 rounded-xl bg-[#fcfdfd] p-2 shadow-inner">
@@ -907,14 +1239,14 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
                         const isChecked = !excludedTypes.has(item.name);
                         const isCategoryDisabled = excludedCategories.has(item.category);
                         const getCategoryLabel = (cat: string) => {
-                          if (cat === '1') return 'Alam'
-                          if (cat === '2') return 'Non-Alam'
-                          return 'Sosial'
+                          if (cat === '1') return 'Baik'
+                          if (cat === '2') return 'Sedang'
+                          return 'Kurang'
                         }
                         const getCategoryBadgeClass = (cat: string) => {
                           if (cat === '1') return 'bg-teal-50 text-teal-700 border-teal-150'
-                          if (cat === '2') return 'bg-blue-50 text-blue-700 border-blue-150'
-                          return 'bg-purple-50 text-purple-700 border-purple-150'
+                          if (cat === '2') return 'bg-amber-50 text-amber-700 border-amber-150'
+                          return 'bg-red-50 text-red-700 border-red-150'
                         }
 
                         return (
@@ -965,9 +1297,9 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
       {/* ── Marker Pin Popup ── */}
       {markerPopup && (
         <div
-          className="absolute z-10 w-[280px] rounded-2xl border border-[#cbe3e2] bg-white/98 backdrop-blur-md shadow-[0_12px_40px_rgba(15,118,110,0.18)] transition-all duration-200"
+          className="absolute z-10 w-[295px] rounded-2xl border border-[#cbe3e2] bg-white/98 backdrop-blur-md shadow-[0_12px_40px_rgba(15,118,110,0.18)] transition-all duration-200"
           style={{
-            left: Math.min(markerPopup.x + 10, (mapContainerRef.current?.offsetWidth || 800) - 295),
+            left: Math.min(markerPopup.x + 10, (mapContainerRef.current?.offsetWidth || 800) - 310),
             top: Math.max(markerPopup.y - 10, 8),
           }}
         >
@@ -976,10 +1308,10 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
             <div className="min-w-0">
               <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-teal-700">
                 <MapPin className="h-2.5 w-2.5" />
-                Lokasi Kejadian
+                Puskesmas
               </span>
               <h4 className="mt-1 text-[13px] font-extrabold uppercase text-[#1a3535] leading-tight">
-                {markerPopup.data.jenis_bencana || 'Kejadian Bencana'}
+                {markerPopup.data.jenis_bencana || 'Puskesmas'}
               </h4>
             </div>
             <button
@@ -993,38 +1325,44 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
           {/* Info rows */}
           <div className="p-3 space-y-1.5 text-[11px] text-slate-600">
             <div className="flex items-start gap-2">
-              <span className="w-16 flex-shrink-0 text-[10px] font-bold text-slate-400 uppercase">Tanggal</span>
-              <span className="font-semibold text-slate-800">{markerPopup.data.tgl_kejadian || '—'}</span>
+              <span className="w-24 flex-shrink-0 text-[10px] font-bold text-slate-400 uppercase">Karakteristik</span>
+              <span className="font-semibold text-slate-800">{markerPopup.data.karakteristik || 'Biasa'}</span>
             </div>
 
             <div className="flex items-start gap-2">
-              <span className="w-16 flex-shrink-0 text-[10px] font-bold text-slate-400 uppercase">Lokasi</span>
+              <span className="w-24 flex-shrink-0 text-[10px] font-bold text-slate-400 uppercase">Lokasi</span>
               <span className="font-semibold text-slate-800 leading-snug">
                 {[markerPopup.data.kecamatan && `Kec. ${markerPopup.data.kecamatan}`, markerPopup.data.kabupaten].filter(Boolean).join(', ') || markerPopup.data.provinsi || '—'}
               </span>
             </div>
 
-            {markerPopup.data.nama_desa && markerPopup.data.nama_desa !== 'Desa Lainnya' && (
-              <div className="flex items-start gap-2">
-                <span className="w-16 flex-shrink-0 text-[10px] font-bold text-slate-400 uppercase">Desa/Dusun</span>
-                <span className="font-semibold text-slate-800">{markerPopup.data.nama_desa}</span>
-              </div>
-            )}
-
-            {markerPopup.data.topografi && markerPopup.data.topografi !== '-' && (
-              <div className="flex items-start gap-2">
-                <span className="w-16 flex-shrink-0 text-[10px] font-bold text-slate-400 uppercase">Topografi</span>
-                <span className="font-semibold text-slate-800">{markerPopup.data.topografi}</span>
-              </div>
-            )}
+            <div className="flex items-start gap-2">
+              <span className="w-24 flex-shrink-0 text-[10px] font-bold text-slate-400 uppercase">Layanan</span>
+              <span className="font-semibold text-slate-800">{markerPopup.data.is_ranap ? 'Rawat Inap' : 'Non Rawat Inap'}</span>
+            </div>
 
             <div className="flex items-start gap-2">
-              <span className="w-16 flex-shrink-0 text-[10px] font-bold text-slate-400 uppercase">Korban</span>
+              <span className="w-24 flex-shrink-0 text-[10px] font-bold text-slate-400 uppercase">Alkes Compl.</span>
+              <span className="font-bold text-teal-700">{markerPopup.data.alkes_pct}%</span>
+            </div>
+
+            <div className="flex items-start gap-2">
+              <span className="w-24 flex-shrink-0 text-[10px] font-bold text-slate-400 uppercase">Obat Compl.</span>
+              <span className="font-bold text-teal-700">{markerPopup.data.obat_pct}%</span>
+            </div>
+
+            <div className="flex items-start gap-2">
+              <span className="w-24 flex-shrink-0 text-[10px] font-bold text-slate-400 uppercase">Nakes Compl.</span>
+              <span className="font-bold text-teal-700">{markerPopup.data.nakes_pct}%</span>
+            </div>
+
+            <div className="flex items-start gap-2">
+              <span className="w-24 flex-shrink-0 text-[10px] font-bold text-slate-400 uppercase">Evaluasi</span>
               <span
                 className="font-extrabold"
-                style={{ color: pinColor(markerPopup.data.total_korban) }}
+                style={{ color: pinColor(markerPopup.data.status_evaluasi) }}
               >
-                {markerPopup.data.total_korban > 0 ? `${markerPopup.data.total_korban.toLocaleString('id-ID')} orang` : 'Tidak ada korban'}
+                {markerPopup.data.status_evaluasi || 'Sedang'}
               </span>
             </div>
           </div>
@@ -1097,12 +1435,12 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
               {/* Stats badges */}
               <div className="grid grid-cols-2 gap-2 mb-3">
                 <div className="rounded-xl bg-teal-50/70 p-2 border border-teal-100/50">
-                  <p className="text-[9px] font-bold text-teal-700/80 uppercase">Kejadian</p>
+                  <p className="text-[9px] font-bold text-teal-700/80 uppercase">Total Puskesmas</p>
                   <p className="text-lg font-extrabold text-teal-700">{activePopup.stats.totalEvents}</p>
                 </div>
-                <div className="rounded-xl bg-red-50/70 p-2 border border-red-100/50">
-                  <p className="text-[9px] font-bold text-red-700/80 uppercase">Total Korban</p>
-                  <p className="text-lg font-extrabold text-red-600">{activePopup.stats.totalKorban.toLocaleString('id-ID')}</p>
+                <div className="rounded-xl bg-teal-50/70 p-2 border border-teal-100/50">
+                  <p className="text-[9px] font-bold text-teal-700/80 uppercase">Rawat Inap</p>
+                  <p className="text-lg font-extrabold text-teal-700">{activePopup.stats.totalKorban}</p>
                 </div>
               </div>
 
@@ -1112,14 +1450,14 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
                   <>
                     <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Sebaran per Kab/Kota:</p>
                     {activePopup.stats.breakdown.length === 0 ? (
-                      <p className="text-xs text-slate-400 italic">Tidak ada kejadian bencana.</p>
+                      <p className="text-xs text-slate-400 italic">Tidak ada data Puskesmas.</p>
                     ) : (
                       <div className="space-y-1.5">
-                        {activePopup.stats.breakdown.map((item, idx) => (
+                        {activePopup.stats.breakdown.map((item: any, idx) => (
                           <div key={idx} className="flex justify-between items-center rounded-lg bg-slate-50/50 p-2 text-xs border border-slate-100">
-                            <span className="font-semibold text-slate-700 truncate max-w-[180px]">{item.name}</span>
-                            <span className="font-extrabold text-slate-900 bg-white border border-slate-200 px-1.5 py-0.5 rounded-md">
-                              {item.count} kejadian
+                            <span className="font-semibold text-slate-700 truncate max-w-[150px]">{item.name}</span>
+                            <span className="font-extrabold text-teal-800 bg-white border border-slate-200 px-1.5 py-0.5 rounded-md">
+                              {item.count} PKM ({item.ranapCount} Ranap)
                             </span>
                           </div>
                         ))}
@@ -1128,24 +1466,25 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
                   </>
                 ) : (
                   <>
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Daftar Kejadian:</p>
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Daftar Puskesmas:</p>
                     {!activePopup.stats.eventsList?.length ? (
-                      <p className="text-xs text-slate-400 italic">Tidak ada kejadian bencana.</p>
+                      <p className="text-xs text-slate-400 italic">Tidak ada data Puskesmas.</p>
                     ) : (
                       <div className="space-y-2">
                         {activePopup.stats.eventsList.map((item, idx) => (
                           <div key={idx} className="rounded-xl border border-slate-100 bg-slate-50/30 p-2.5 text-xs">
                             <div className="flex justify-between items-start">
                               <span className="font-bold text-teal-800">{item.jenis_bencana}</span>
-                              <span className="text-[10px] text-slate-400">{item.tgl_kejadian}</span>
+                              <span className="text-[10px] text-slate-400 font-semibold">{item.is_ranap ? 'Rawat Inap' : 'Non Rawat Inap'}</span>
                             </div>
                             <div className="mt-1 text-[11px] text-slate-500">
                               {item.kecamatan && <span>Kec. {item.kecamatan}</span>}
                               {item.nama_desa && <span>, Desa {item.nama_desa}</span>}
                             </div>
-                            <div className="mt-1.5 flex items-center justify-between border-t border-dashed border-slate-200/60 pt-1.5">
-                              <span className="text-[10px] text-slate-400">Korban:</span>
-                              <span className="font-bold text-red-600">{item.total_korban} orang</span>
+                            <div className="mt-1.5 flex flex-wrap gap-2 justify-between border-t border-dashed border-slate-200/60 pt-1.5 text-[10px] text-slate-500">
+                              <span>Alkes: <b className="text-teal-700">{item.alkes_pct}%</b></span>
+                              <span>Obat: <b className="text-teal-700">{item.obat_pct}%</b></span>
+                              <span>Nakes: <b className="text-teal-700">{item.nakes_pct}%</b></span>
                             </div>
                           </div>
                         ))}
@@ -1177,15 +1516,24 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
         </div>
       )}
 
+
+
       {/* ── Legend (bottom-left) ── */}
       {(showRegionLegend || showCasualtyLegend) && (
         <div className="absolute bottom-5 left-5 max-w-[260px] rounded-2xl border border-[#cbe3e2] bg-white/95 backdrop-blur-md p-4 shadow-[0_8px_30px_rgba(15,118,110,0.12)] space-y-3.5">
           {/* Choropleth legend */}
           {showRegionLegend && (
             <div>
-              <p className="mb-2 text-[10px] font-extrabold uppercase tracking-widest text-[#0f766e]">{markerTitle}</p>
+              <p className="mb-2 text-[10px] font-extrabold uppercase tracking-widest text-[#0f766e]">
+                {mapViewMode === 'blud' ? 'Capaian BLUD (Tata Kelola)' : mapViewMode === 'ilp' ? 'Kesiapan ILP (Alkes)' : mapViewMode === 'pkp' ? 'Evaluasi PKP (SDM)' : 'Tata Kelola Baik (Gabungan)'}
+              </p>
               <div className="space-y-1.5">
-                {choroplethLegend.map((b, i) => (
+                {[
+                  { label: `Aman (≥ ${thresholdAman}%)`, color: hexToRgbA(colorAman, 0.75) },
+                  { label: `Cukup (${thresholdCukup}% - ${thresholdAman - 1}%)`, color: hexToRgbA(colorCukup, 0.75) },
+                  { label: `Kritis (< ${thresholdCukup}%)`, color: hexToRgbA(colorKritis, 0.75) },
+                  { label: 'Tidak Ada Data', color: 'rgba(241, 245, 249, 0.55)' },
+                ].map((b, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-slate-200 shadow-sm" style={{ background: b.color }} />
                     <span className="text-[11px] font-medium text-slate-700">{b.label}</span>
@@ -1200,16 +1548,17 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
             <div className="h-px bg-slate-100" />
           )}
 
-          {/* Pin Marker (Korban) legend */}
+          {/* Pin Marker (Puskesmas Status) legend */}
           {showCasualtyLegend && (
             <div>
-              <p className="mb-2 text-[10px] font-extrabold uppercase tracking-widest text-red-600">Skala Dampak Korban</p>
+              <p className="mb-2 text-[10px] font-extrabold uppercase tracking-widest text-teal-800">
+                Status Evaluasi Puskesmas
+              </p>
               <div className="space-y-1.5">
                 {[
-                  { label: '0 korban', color: '#94a3b8' },
-                  { label: '1 – 5 korban', color: '#facc15' },
-                  { label: '6 – 20 korban', color: '#f97316' },
-                  { label: '> 20 korban', color: '#dc2626' },
+                  { label: 'Evaluasi Baik', color: '#10b981' },
+                  { label: 'Evaluasi Sedang', color: '#f59e0b' },
+                  { label: 'Evaluasi Kurang', color: '#ef4444' },
                 ].map((b, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-slate-200 shadow-sm animate-pulse" style={{ background: b.color }} />
@@ -1222,7 +1571,86 @@ export default function DisasterMap({ markers, userScope, onSelectProvince, isGu
         </div>
       )}
 
-
+      {/* ── Hover Tooltip (Glassmorphism card) ── */}
+      {hoverTooltip && (
+        <div
+          className="absolute z-30 pointer-events-none w-[250px] rounded-2xl border border-white/50 bg-white/70 backdrop-blur-md p-4 shadow-xl text-slate-800 animate-in fade-in zoom-in-95 duration-150"
+          style={{
+            left: Math.min(hoverTooltip.x + 15, (mapContainerRef.current?.offsetWidth || 800) - 265),
+            top: Math.min(hoverTooltip.y + 15, (mapContainerRef.current?.offsetHeight || 500) - 150),
+          }}
+        >
+          <div className="flex items-center justify-between border-b border-slate-900/10 pb-1.5 mb-2">
+            <h5 className="text-xs font-black uppercase text-slate-900 tracking-wider truncate max-w-[170px]">
+              {hoverTooltip.name}
+            </h5>
+            <span className="text-[9px] font-extrabold uppercase tracking-wider bg-teal-50/70 border border-teal-100 text-teal-800 px-1.5 py-0.5 rounded-full shrink-0">
+              {hoverTooltip.type}
+            </span>
+          </div>
+          <div className="space-y-1.5 text-[11px] font-semibold text-slate-600">
+            {hoverTooltip.type === 'marker' ? (
+              <>
+                <div className="flex justify-between">
+                  <span>Layanan</span>
+                  <span className="font-bold text-slate-950">{hoverTooltip.statusDokter}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>
+                    {mapViewMode === 'blud' ? 'Status BLUD' : mapViewMode === 'ilp' ? 'Kesiapan ILP' : mapViewMode === 'pkp' ? 'Evaluasi PKP' : 'Tata Kelola (Gabungan)'}
+                  </span>
+                  <span className="font-bold text-teal-800">
+                    {mapViewMode === 'blud' 
+                      ? (hoverTooltip.capaianIlp >= 80 ? 'Baik' : hoverTooltip.capaianIlp >= 40 ? 'Sedang' : 'Kurang')
+                      : `${hoverTooltip.capaianIlp}%`
+                    }
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex justify-between">
+                  <span>Total Puskesmas</span>
+                  <span className="font-bold text-slate-900">{hoverTooltip.totalPuskesmas} PKM</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>
+                    {mapViewMode === 'blud' ? 'Capaian BLUD (Rata-rata)' : mapViewMode === 'ilp' ? 'Rata-rata ILP' : mapViewMode === 'pkp' ? 'Kelengkapan PKP' : 'Tata Kelola Gabungan'}
+                  </span>
+                  <span className="font-bold text-teal-850">{hoverTooltip.capaianIlp}%</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Status Wilayah</span>
+                  <span
+                    className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider"
+                    style={{
+                      backgroundColor: hoverTooltip.capaianIlp >= thresholdAman
+                        ? hexToRgbA(colorAman, 0.15)
+                        : hoverTooltip.capaianIlp >= thresholdCukup
+                        ? hexToRgbA(colorCukup, 0.15)
+                        : hexToRgbA(colorKritis, 0.15),
+                      color: hoverTooltip.capaianIlp >= thresholdAman
+                        ? colorAman
+                        : hoverTooltip.capaianIlp >= thresholdCukup
+                        ? colorCukup
+                        : colorKritis,
+                      border: `1px solid ${
+                        hoverTooltip.capaianIlp >= thresholdAman
+                          ? colorAman
+                          : hoverTooltip.capaianIlp >= thresholdCukup
+                          ? colorCukup
+                          : colorKritis
+                      }`
+                    }}
+                  >
+                    {hoverTooltip.capaianIlp >= thresholdAman ? 'Aman' : hoverTooltip.capaianIlp >= thresholdCukup ? 'Cukup' : 'Kritis'}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
