@@ -20,6 +20,7 @@ import {
   ChevronUp,
   ChevronDown,
   Search,
+  Download,
   X,
   Info,
   ShieldCheck,
@@ -90,6 +91,9 @@ export default function DashboardKejadianPage() {
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
+
+  // State untuk pencarian pada tabel capaian kinerja puskesmas per wilayah
+  const [tableSearchQuery, setTableSearchQuery] = useState('')
 
   // Debounced region search API call
   useEffect(() => {
@@ -505,6 +509,17 @@ export default function DashboardKejadianPage() {
     return list
   }, [data, kabupaten])
 
+  // Filtered breakdown data for the regional table based on search input
+  const filteredWilayahBreakdown = useMemo(() => {
+    if (!data?.wilayah_breakdown) return []
+    if (tableSearchQuery.trim() === '') return data.wilayah_breakdown
+    const query = tableSearchQuery.toLowerCase().trim()
+    return data.wilayah_breakdown.filter((wil) =>
+      wil.nama.toLowerCase().includes(query)
+    )
+  }, [data?.wilayah_breakdown, tableSearchQuery])
+
+
 
   const isProvLocked = user?.wilayah_scope?.mode === 'provinsi'
   const isKabLocked = user?.wilayah_scope?.mode === 'kabupaten'
@@ -638,6 +653,53 @@ export default function DashboardKejadianPage() {
     }
   }, [fetchData])
 
+  // CSV Export function for Capaian Kinerja Puskesmas Per Wilayah
+  const handleExportTableCSV = () => {
+    if (!filteredWilayahBreakdown) return
+
+    const headers = [
+      'NO',
+      'Wilayah',
+      'Total Puskesmas',
+      'Rawat Inap',
+      'Non Rawat Inap',
+      'Kepatuhan Alkes (%)',
+      'Kepatuhan Obat (%)',
+      'Kepatuhan Nakes (%)',
+      'Status Evaluasi'
+    ]
+
+    const csvRows = filteredWilayahBreakdown.map((item, idx) => [
+      idx + 1,
+      item.nama,
+      item.total_puskesmas,
+      item.ranap,
+      item.non_ranap,
+      `${item.alkes_pct}%`,
+      `${item.obat_pct}%`,
+      `${item.nakes_pct}%`,
+      item.status
+    ])
+
+    const csvContent = [
+      headers.join(','),
+      ...csvRows.map((row) => row.map((val) => `"${val}"`).join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.setAttribute('href', url)
+    
+    const scopeName = getRegionLabel().toLowerCase().replace(/[^a-z0-9]/g, '_')
+    link.setAttribute(
+      'download',
+      `capaian_kinerja_puskesmas_${scopeName}_${new Date().toISOString().slice(0, 10)}.csv`
+    )
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   const generateAiInsight = () => {
     if (!data) return
@@ -729,11 +791,11 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
 
         {/* Column 1: Smart Search Bar */}
         <div className="relative w-full z-20">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#6b7280]">
+          <p className="mb-2 text-xs sm:text-[14px] font-black uppercase tracking-widest text-slate-500">
             Pencarian Wilayah
           </p>
           <div className="relative flex items-center">
-            <Search className="absolute left-4 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-4 h-5 w-5 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
@@ -743,7 +805,7 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
               }}
               onFocus={() => setShowSuggestions(true)}
               placeholder="Cari Provinsi, Kab/Kota, Kecamatan, atau Desa..."
-              className="w-full rounded-2xl border border-slate-200 bg-white h-12 pl-11 pr-10 text-sm font-medium shadow-sm outline-none placeholder:text-slate-400 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all"
+              className="w-full rounded-2xl border border-slate-200 bg-white h-[52px] pl-12 pr-10 text-sm sm:text-base font-bold text-slate-800 shadow-sm outline-none placeholder:text-slate-400 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all"
             />
             {isSearching ? (
               <Loader2 className="absolute right-4 h-4 w-4 animate-spin text-teal-600" />
@@ -783,11 +845,11 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
                       key={idx}
                       type="button"
                       onClick={() => handleSelectSuggestion(sug)}
-                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-teal-50/50 transition-colors"
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs sm:text-sm font-bold text-slate-700 hover:bg-teal-50/50 transition-colors"
                     >
                       <MapPin className="h-4 w-4 text-slate-400 shrink-0" />
                       <span className="flex-1 truncate">{sug.label}</span>
-                      <span className={`rounded-lg border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${badgeClass}`}>
+                      <span className={`rounded-lg border px-2 py-0.5 text-[10px] sm:text-[11px] font-black uppercase tracking-wider ${badgeClass}`}>
                         {sug.type}
                       </span>
                     </button>
@@ -801,7 +863,7 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowSuggestions(false)} />
               <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 rounded-2xl border border-slate-100 bg-white p-4 text-center shadow-[0_12px_40px_rgba(0,0,0,0.12)]">
-                <p className="text-xs text-slate-400 italic">Tidak ditemukan wilayah dengan kata kunci "{searchQuery}"</p>
+                <p className="text-xs sm:text-sm text-slate-450 italic font-semibold">Tidak ditemukan wilayah dengan kata kunci "{searchQuery}"</p>
               </div>
             </>
           )}
@@ -809,28 +871,28 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
 
         {/* Column 2: Info Filter Panel */}
         <div className="w-full">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#6b7280]">
+          <p className="mb-2 text-xs sm:text-[14px] font-black uppercase tracking-widest text-slate-500">
             Info Filter Aktif
           </p>
-          <div className="flex items-center rounded-2xl border border-teal-100 bg-[#f6fffd] px-4 text-xs shadow-[0_6px_18px_rgba(20,120,116,0.04)] h-auto md:h-12 py-3 md:py-0 w-full">
+          <div className="flex items-center rounded-2xl border border-teal-100 bg-[#f6fffd] px-4 text-xs shadow-[0_6px_18px_rgba(20,120,116,0.04)] h-auto md:h-[52px] py-3 md:py-0 w-full">
             <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-slate-600 font-semibold w-full">
 
               <span className="hidden h-4 w-px bg-teal-200 sm:inline-block" aria-hidden="true" />
 
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-slate-700">
                 <span className="inline-flex items-center gap-1">
-                  <span className="font-semibold text-slate-400">Cakupan:</span>
-                  <span className="font-extrabold text-slate-800 uppercase text-[11px]">{cakupan}</span>
+                  <span className="font-bold text-slate-500">Cakupan:</span>
+                  <span className="font-black text-slate-900 uppercase text-xs sm:text-sm">{cakupan}</span>
                 </span>
                 <span className="text-teal-200" aria-hidden="true">|</span>
                 <span className="inline-flex items-center gap-1">
-                  <span className="font-semibold text-slate-400">Provinsi:</span>
-                  <span className="font-extrabold text-slate-800 uppercase text-[11px]">{province || 'Semua Provinsi'}</span>
+                  <span className="font-bold text-slate-500">Provinsi:</span>
+                  <span className="font-black text-slate-900 uppercase text-xs sm:text-sm">{province || 'Semua Provinsi'}</span>
                 </span>
                 <span className="text-teal-200" aria-hidden="true">|</span>
                 <span className="inline-flex items-center gap-1">
-                  <span className="font-semibold text-slate-400">Kab/Kota:</span>
-                  <span className="font-extrabold text-slate-800 uppercase text-[11px]">{kabupaten || 'Semua Kab/Kota'}</span>
+                  <span className="font-bold text-slate-500">Kab/Kota:</span>
+                  <span className="font-black text-slate-900 uppercase text-xs sm:text-sm">{kabupaten || 'Semua Kab/Kota'}</span>
                 </span>
               </div>
             </div>
@@ -839,20 +901,20 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
 
         {/* Column 3: Reset Filter Button */}
         <div className="w-full">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#6b7280] md:invisible">
+          <p className="mb-2 text-xs sm:text-[14px] font-black uppercase tracking-widest text-slate-500 md:invisible">
             Aksi
           </p>
           <button
             onClick={handleResetFilter}
             disabled={!showResetButton}
             title="Reset Filter"
-            className={`flex w-full items-center justify-center gap-2 rounded-2xl border px-4 text-xs font-extrabold shadow-sm transition-all outline-none h-12 uppercase tracking-wider ${
+            className={`flex w-full items-center justify-center gap-2 rounded-2xl border px-4 text-xs sm:text-sm font-black shadow-sm transition-all outline-none h-[52px] uppercase tracking-wider ${
               showResetButton
                 ? 'border-teal-200 bg-teal-50 text-teal-800 hover:bg-teal-100 hover:-translate-y-0.5 active:scale-95'
                 : 'border-slate-200 bg-slate-50/50 text-slate-400 cursor-not-allowed'
             }`}
           >
-            <RefreshCw className="h-4 w-4 shrink-0" />
+            <RefreshCw className="h-5 w-5 shrink-0" />
             <span>RESET FILTER</span>
           </button>
         </div>
@@ -883,7 +945,7 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
 
             {/* Grid 2: Segmented Control — Kategori Layanan (20% width on lg) */}
             <div className="flex flex-col w-full">
-              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.12em] mb-1.5">Kategori Layanan</span>
+              <span className="text-xs sm:text-[14px] font-black text-slate-500 uppercase tracking-[0.12em] mb-1.5">Kategori Layanan</span>
               <div className="flex bg-slate-100 p-1 rounded-xl gap-0.5 w-full">
                 {[
                   { id: 'all' as const, label: 'Semua' },
@@ -893,7 +955,7 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
                   <button
                     key={opt.id}
                     onClick={() => setSelectedKategori(opt.id)}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
+                    className={`flex-1 py-2 text-xs sm:text-sm font-black rounded-lg transition-all duration-200 ${
                       selectedKategori === opt.id
                         ? 'bg-[#047D78] text-white shadow-[0_2px_8px_rgba(4,125,120,0.30)]'
                         : 'text-slate-500 hover:text-slate-800 hover:bg-white/60'
@@ -907,11 +969,11 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
 
             {/* Grid 3: Multi-Select Dropdown — Karakteristik Wilayah (20% width on lg) */}
             <div className="flex flex-col w-full">
-              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.12em] mb-1.5">Karakteristik Wilayah</span>
+              <span className="text-xs sm:text-[14px] font-black text-slate-500 uppercase tracking-[0.12em] mb-1.5">Karakteristik Wilayah</span>
               <div className="relative w-full">
                 <button
                   onClick={() => setShowKarakteristikDropdown(!showKarakteristikDropdown)}
-                  className={`flex items-center justify-between gap-2.5 rounded-xl border px-4 py-2.5 text-xs font-bold outline-none transition-all w-full ${
+                  className={`flex items-center justify-between gap-2.5 rounded-xl border px-4 py-2.5 text-xs sm:text-sm font-black outline-none transition-all w-full ${
                     selectedKarakteristik.length > 0
                       ? 'border-indigo-200 bg-indigo-50 text-indigo-800'
                       : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
@@ -934,14 +996,14 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
                       onClick={() => setShowKarakteristikDropdown(false)}
                     />
                     <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-full min-w-[200px] overflow-hidden rounded-2xl border border-slate-100 bg-white p-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.12)]">
-                      <p className="px-3 pb-2 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Pilih Karakteristik</p>
+                      <p className="px-3 pb-2 text-xs font-black uppercase tracking-wider text-slate-500 border-b border-slate-100 mb-2">Pilih Karakteristik</p>
                       {['Terpencil (T)', 'Sangat Terpencil (ST)', 'Pedesaan', 'Perkotaan'].map((tag) => {
                         const isChecked = selectedKarakteristik.includes(tag)
                         return (
                           <label
                             key={tag}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer select-none transition-colors ${
-                              isChecked ? 'bg-indigo-50 text-indigo-800' : 'text-slate-700 hover:bg-slate-50'
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold cursor-pointer select-none transition-colors ${
+                              isChecked ? 'bg-indigo-50 text-indigo-850' : 'text-slate-700 hover:bg-slate-50'
                             }`}
                           >
                             <input
@@ -957,7 +1019,7 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
                               className="rounded w-4 h-4 accent-[#047D78]"
                             />
                             <span>{tag}</span>
-                            {isChecked && <span className="ml-auto text-indigo-500 font-bold">✓</span>}
+                            {isChecked && <span className="ml-auto text-indigo-650 font-black">✓</span>}
                           </label>
                         )
                       })}
@@ -976,55 +1038,58 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
         {/* Card 1: Governance */}
         <article
           onClick={() => setSelectedCard('tata_kelola')}
-          className="flex items-center justify-between p-6 bg-white border border-slate-200/70 rounded-2xl shadow-[0_4px_10px_rgba(0,0,0,0.04)] cursor-pointer hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(0,0,0,0.07)] transition-all active:scale-[0.98] min-h-[160px] h-full"
+          className="flex items-center justify-between py-3 px-4 sm:py-3.5 sm:px-4 bg-white border border-slate-200/70 rounded-2xl shadow-[0_4px_10px_rgba(0,0,0,0.04)] cursor-pointer hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(0,0,0,0.07)] transition-all active:scale-[0.98] min-h-[110px] sm:min-h-[118px] h-full"
         >
           {/* Left section: Icon + Text Stack */}
-          <div className="flex items-center gap-5 min-w-0 flex-1">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
             {/* Circular Icon Badge */}
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-teal-50 border border-teal-100 text-teal-600 shadow-inner">
-              <ShieldCheck className="h-8 w-8" />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-teal-50 border border-teal-100 text-teal-600 shadow-inner">
+              <ShieldCheck className="h-6 w-6" />
             </div>
             
             {/* Text Stack */}
-            <div className="flex flex-col min-w-0 space-y-1">
-              <span className="text-xs sm:text-[13px] font-extrabold text-slate-500 uppercase tracking-wider truncate">
+            <div className="flex flex-col min-w-0 space-y-0.5">
+              <span className="text-xs sm:text-[14px] font-extrabold text-slate-500 uppercase tracking-wider whitespace-normal">
                 % Puskesmas Tata Kelola Baik
               </span>
-              <span className="text-5xl font-black text-slate-800 tracking-tight leading-none py-1">
-                {loading ? '...' : `${stats.pctBaik}%`}
-              </span>
-              <p className="text-xs sm:text-[13px] text-slate-500 font-semibold truncate">
-                Target Nasional: <span className="text-slate-800 font-bold">80%</span>
+              <div className="flex items-baseline gap-0.5 py-0.5">
+                <span className="text-2xl sm:text-[28px] font-black text-slate-900 tracking-tight leading-none">
+                  {loading ? '...' : stats.pctBaik}
+                </span>
+                <span className="text-xs sm:text-sm font-extrabold text-slate-500">%</span>
+              </div>
+              <p className="text-[11px] sm:text-[13px] text-slate-650 font-bold whitespace-normal">
+                Target Nasional: <span className="text-slate-900 font-black">80%</span>
               </p>
             </div>
           </div>
 
           {/* Right section: Circle Progress Ring */}
-          <div className="relative flex items-center justify-center h-16 w-16 shrink-0">
+          <div className="relative flex items-center justify-center h-12 w-12 shrink-0">
             <svg className="w-full h-full transform -rotate-90">
               <circle
                 className="text-slate-100"
-                strokeWidth="4"
+                strokeWidth="3"
                 stroke="currentColor"
                 fill="transparent"
-                r="24"
-                cx="32"
-                cy="32"
+                r="17"
+                cx="24"
+                cy="24"
               />
               <circle
                 className="text-teal-650 transition-all duration-500 ease-in-out"
-                strokeWidth="4"
-                strokeDasharray={`${2 * Math.PI * 24}`}
-                strokeDashoffset={`${2 * Math.PI * 24 * (1 - (loading ? 0 : stats.pctBaik) / 100)}`}
+                strokeWidth="3"
+                strokeDasharray={`${2 * Math.PI * 17}`}
+                strokeDashoffset={`${2 * Math.PI * 17 * (1 - (loading ? 0 : stats.pctBaik) / 100)}`}
                 strokeLinecap="round"
                 stroke="currentColor"
                 fill="transparent"
-                r="24"
-                cx="32"
-                cy="32"
+                r="17"
+                cx="24"
+                cy="24"
               />
             </svg>
-            <span className="absolute text-[11px] font-black text-slate-800">
+            <span className="absolute text-[10px] font-black text-slate-900">
               {loading ? '...' : `${stats.pctBaik}%`}
             </span>
           </div>
@@ -1033,88 +1098,91 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
         {/* Card 2: Total Facilities */}
         <article
           onClick={() => setSelectedCard('jumlah')}
-          className="flex items-center justify-between p-6 bg-white border border-slate-200/70 rounded-2xl shadow-[0_4px_10px_rgba(0,0,0,0.04)] cursor-pointer hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(0,0,0,0.07)] transition-all active:scale-[0.98] min-h-[160px] h-full"
+          className="flex items-center justify-between py-3 px-4 sm:py-3.5 sm:px-4 bg-white border border-slate-200/70 rounded-2xl shadow-[0_4px_10px_rgba(0,0,0,0.04)] cursor-pointer hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(0,0,0,0.07)] transition-all active:scale-[0.98] min-h-[110px] sm:min-h-[118px] h-full"
         >
           {/* Left section: Icon + Text Stack */}
-          <div className="flex items-center gap-5 min-w-0 flex-1">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
             {/* Circular Icon Badge */}
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-amber-50 border border-amber-100 text-amber-600 shadow-inner">
-              <Building2 className="h-8 w-8" />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-50 border border-amber-100 text-amber-600 shadow-inner">
+              <Building2 className="h-6 w-6" />
             </div>
             
             {/* Text Stack */}
-            <div className="flex flex-col min-w-0 space-y-1">
-              <span className="text-xs sm:text-[13px] font-extrabold text-slate-500 uppercase tracking-wider truncate">
+            <div className="flex flex-col min-w-0 space-y-0.5">
+              <span className="text-xs sm:text-[14px] font-extrabold text-slate-500 uppercase tracking-wider whitespace-normal">
                 Total Puskesmas Terdata
               </span>
-              <span className="text-5xl font-black text-slate-800 tracking-tight leading-none py-1">
+              <span className="text-2xl sm:text-[28px] font-black text-slate-900 tracking-tight leading-none py-0.5 block">
                 {loading ? '...' : stats.total.toLocaleString('id-ID')}
               </span>
-              <p className="text-xs sm:text-[13px] text-[#00B0AA] font-bold flex items-center gap-0.5 truncate">
-                <ChevronUp className="h-4 w-4 shrink-0" />
+              <p className="text-[11px] sm:text-[13px] text-[#008A85] font-black flex items-center gap-0.5 whitespace-normal">
+                <ChevronUp className="h-3.5 w-3.5 shrink-0" />
                 <span>2,1% dari bulan sebelumnya</span>
               </p>
             </div>
           </div>
 
           {/* Right section: Green Trend Badge */}
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-teal-50 border border-teal-100 text-teal-600 shadow-sm">
-            <TrendingUp className="h-8 w-8" />
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-teal-50 border border-teal-100 text-teal-600 shadow-sm">
+            <TrendingUp className="h-6 w-6" />
           </div>
         </article>
 
         {/* Card 3: Medical Equipment Readiness */}
         <article
           onClick={() => setSelectedCard('alkes')}
-          className="flex items-center justify-between p-6 bg-white border border-slate-200/70 rounded-2xl shadow-[0_4px_10px_rgba(0,0,0,0.04)] cursor-pointer hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(0,0,0,0.07)] transition-all active:scale-[0.98] min-h-[160px] h-full"
+          className="flex items-center justify-between py-3 px-4 sm:py-3.5 sm:px-4 bg-white border border-slate-200/70 rounded-2xl shadow-[0_4px_10px_rgba(0,0,0,0.04)] cursor-pointer hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(0,0,0,0.07)] transition-all active:scale-[0.98] min-h-[110px] sm:min-h-[118px] h-full"
         >
           {/* Left section: Icon + Text Stack */}
-          <div className="flex items-center gap-5 min-w-0 flex-1">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
             {/* Circular Icon Badge */}
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 shadow-inner">
-              <Stethoscope className="h-8 w-8" />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 shadow-inner">
+              <Stethoscope className="h-6 w-6" />
             </div>
             
             {/* Text Stack */}
-            <div className="flex flex-col min-w-0 space-y-1">
-              <span className="text-xs sm:text-[13px] font-extrabold text-slate-500 uppercase tracking-wider truncate">
+            <div className="flex flex-col min-w-0 space-y-0.5">
+              <span className="text-xs sm:text-[14px] font-extrabold text-slate-500 uppercase tracking-wider whitespace-normal">
                 Rata-rata Ketersediaan Alkes
               </span>
-              <span className="text-5xl font-black text-slate-800 tracking-tight leading-none py-1">
-                {loading ? '...' : `${stats.avgAlkes}%`}
-              </span>
-              <p className="text-xs sm:text-[13px] text-slate-500 font-semibold truncate">
-                Target Kesiapan: <span className="text-slate-800 font-bold">60%</span>
+              <div className="flex items-baseline gap-0.5 py-0.5">
+                <span className="text-2xl sm:text-[28px] font-black text-slate-900 tracking-tight leading-none">
+                  {loading ? '...' : stats.avgAlkes}
+                </span>
+                <span className="text-xs sm:text-sm font-extrabold text-slate-500">%</span>
+              </div>
+              <p className="text-[11px] sm:text-[13px] text-slate-600 font-bold whitespace-normal">
+                Target Kesiapan: <span className="text-slate-955 font-black">60%</span>
               </p>
             </div>
           </div>
 
           {/* Right section: Circle Progress Ring */}
-          <div className="relative flex items-center justify-center h-16 w-16 shrink-0">
+          <div className="relative flex items-center justify-center h-12 w-12 shrink-0">
             <svg className="w-full h-full transform -rotate-90">
               <circle
                 className="text-slate-100"
-                strokeWidth="4"
+                strokeWidth="3"
                 stroke="currentColor"
                 fill="transparent"
-                r="24"
-                cx="32"
-                cy="32"
+                r="17"
+                cx="24"
+                cy="24"
               />
               <circle
                 className="text-emerald-605 transition-all duration-500 ease-in-out"
-                strokeWidth="4"
-                strokeDasharray={`${2 * Math.PI * 24}`}
-                strokeDashoffset={`${2 * Math.PI * 24 * (1 - (loading ? 0 : stats.avgAlkes) / 100)}`}
+                strokeWidth="3"
+                strokeDasharray={`${2 * Math.PI * 17}`}
+                strokeDashoffset={`${2 * Math.PI * 17 * (1 - (loading ? 0 : stats.avgAlkes) / 100)}`}
                 strokeLinecap="round"
                 stroke="currentColor"
                 fill="transparent"
-                r="24"
-                cx="32"
-                cy="32"
+                r="17"
+                cx="24"
+                cy="24"
               />
             </svg>
-            <span className="absolute text-[11px] font-black text-slate-800">
+            <span className="absolute text-[10px] font-black text-slate-900">
               {loading ? '...' : `${stats.avgAlkes}%`}
             </span>
           </div>
@@ -1123,55 +1191,60 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
         {/* Card 4: Essential Medicine Availability */}
         <article
           onClick={() => setSelectedCard('obat')}
-          className="flex items-center justify-between p-6 bg-white border border-slate-200/70 rounded-2xl shadow-[0_4px_10px_rgba(0,0,0,0.04)] cursor-pointer hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(0,0,0,0.07)] transition-all active:scale-[0.98] min-h-[160px] h-full"
+          className="flex items-center justify-between py-3 px-4 sm:py-3.5 sm:px-4 bg-white border border-slate-200/70 rounded-2xl shadow-[0_4px_10px_rgba(0,0,0,0.04)] cursor-pointer hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(0,0,0,0.07)] transition-all active:scale-[0.98] min-h-[110px] sm:min-h-[118px] h-full"
         >
           {/* Left section: Icon + Text Stack */}
-          <div className="flex items-center gap-5 min-w-0 flex-1">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
             {/* Circular Icon Badge */}
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 shadow-inner">
-              <Pill className="h-8 w-8" />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 shadow-inner">
+              <Pill className="h-6 w-6" />
             </div>
             
             {/* Text Stack */}
-            <div className="flex flex-col min-w-0 space-y-1">
-              <span className="text-xs sm:text-[13px] font-extrabold text-slate-500 uppercase tracking-wider truncate">
+            <div className="flex flex-col min-w-0 space-y-0.5">
+              <span className="text-xs sm:text-[14px] font-extrabold text-slate-500 uppercase tracking-wider whitespace-normal">
                 Ketersediaan Obat Esensial
               </span>
-              <span className="text-5xl font-black text-slate-800 tracking-tight leading-none py-1">
-                {loading ? '...' : `${stats.obatJenis} Jenis`}
-              </span>
-              <p className="text-xs sm:text-[13px] text-slate-500 font-semibold truncate">
-                Ambang batas: <span className="text-slate-800 font-bold">40 Obat</span>
+              <div className="flex items-baseline gap-1 py-0.5">
+                <span className="text-2xl sm:text-[28px] font-black text-slate-900 tracking-tight leading-none">
+                  {loading ? '...' : stats.obatJenis}
+                </span>
+                <span className="text-xs font-extrabold text-slate-500">
+                  Jenis
+                </span>
+              </div>
+              <p className="text-[11px] sm:text-[13px] text-slate-650 font-bold whitespace-normal">
+                Ambang batas: <span className="text-slate-955 font-black">40 Obat</span>
               </p>
             </div>
           </div>
 
           {/* Right section: Circle Progress Ring */}
-          <div className="relative flex items-center justify-center h-16 w-16 shrink-0">
+          <div className="relative flex items-center justify-center h-12 w-12 shrink-0">
             <svg className="w-full h-full transform -rotate-90">
               <circle
                 className="text-slate-100"
-                strokeWidth="4"
+                strokeWidth="3"
                 stroke="currentColor"
                 fill="transparent"
-                r="24"
-                cx="32"
-                cy="32"
+                r="17"
+                cx="24"
+                cy="24"
               />
               <circle
                 className="text-indigo-605 transition-all duration-500 ease-in-out"
-                strokeWidth="4"
-                strokeDasharray={`${2 * Math.PI * 24}`}
-                strokeDashoffset={`${2 * Math.PI * 24 * (1 - (loading ? 0 : stats.avgObat) / 100)}`}
+                strokeWidth="3"
+                strokeDasharray={`${2 * Math.PI * 17}`}
+                strokeDashoffset={`${2 * Math.PI * 17 * (1 - (loading ? 0 : stats.avgObat) / 100)}`}
                 strokeLinecap="round"
                 stroke="currentColor"
                 fill="transparent"
-                r="24"
-                cx="32"
-                cy="32"
+                r="17"
+                cx="24"
+                cy="24"
               />
             </svg>
-            <span className="absolute text-[11px] font-black text-slate-800">
+            <span className="absolute text-[10px] font-black text-slate-900">
               {loading ? '...' : `${stats.avgObat}%`}
             </span>
           </div>
@@ -1180,38 +1253,38 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
         {/* Card 5: Kecamatan Tanpa Puskesmas (Bonus Alert Card) */}
         <article
           onClick={() => setSelectedCard('kecamatan_tanpa')}
-          className="flex items-center justify-between p-6 bg-white border border-slate-200/70 rounded-2xl shadow-[0_4px_10px_rgba(0,0,0,0.04)] cursor-pointer hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(0,0,0,0.07)] transition-all active:scale-[0.98] min-h-[160px] h-full"
+          className="flex items-center justify-between py-3 px-4 sm:py-3.5 sm:px-4 bg-white border border-slate-200/70 rounded-2xl shadow-[0_4px_10px_rgba(0,0,0,0.04)] cursor-pointer hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(0,0,0,0.07)] transition-all active:scale-[0.98] min-h-[110px] sm:min-h-[118px] h-full"
         >
           {/* Left section: Icon + Text Stack */}
-          <div className="flex items-center gap-5 min-w-0 flex-1">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
             {/* Circular Icon Badge */}
-            <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-full shadow-inner ${
+            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full shadow-inner ${
               (loading ? 0 : data?.kecamatan_tanpa_puskesmas || 0) > 0
                 ? 'bg-red-50 border border-red-100 text-red-650'
                 : 'bg-green-50 border border-green-100 text-green-600'
             }`}>
-              <AlertTriangle className="h-8 w-8" />
+              <AlertTriangle className="h-6 w-6" />
             </div>
             
             {/* Text Stack */}
-            <div className="flex flex-col min-w-0 space-y-1">
-              <span className="text-xs sm:text-[13px] font-extrabold text-slate-500 uppercase tracking-wider truncate">
+            <div className="flex flex-col min-w-0 space-y-0.5">
+              <span className="text-xs sm:text-[14px] font-extrabold text-slate-500 uppercase tracking-wider whitespace-normal">
                 Kecamatan Tanpa Puskesmas
               </span>
-              <div className="flex items-center gap-2 py-1">
-                <span className={`text-5xl font-black tracking-tight leading-none ${
+              <div className="flex items-center gap-2 py-0.5">
+                <span className={`text-2xl sm:text-[28px] font-black tracking-tight leading-none ${
                   (loading ? 0 : data?.kecamatan_tanpa_puskesmas || 0) > 0 ? 'text-red-600' : 'text-slate-800'
                 }`} style={{ color: (loading ? 0 : data?.kecamatan_tanpa_puskesmas || 0) > 0 ? '#dc2626' : undefined }}>
                   {loading ? '...' : data?.kecamatan_tanpa_puskesmas || 0}
                 </span>
                 {(loading ? 0 : data?.kecamatan_tanpa_puskesmas || 0) > 0 && (
-                  <span className="bg-red-105 text-red-700 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-wider animate-pulse" style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}>
+                  <span className="bg-red-105 text-red-700 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-wider animate-pulse" style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}>
                     Mendesak
                   </span>
                 )}
               </div>
-              <p className="text-xs sm:text-[13px] text-slate-500 font-semibold truncate">
-                Status Ketersediaan: <span className={(loading ? 0 : data?.kecamatan_tanpa_puskesmas || 0) > 0 ? 'font-bold' : 'text-green-600 font-bold'} style={{ color: (loading ? 0 : data?.kecamatan_tanpa_puskesmas || 0) > 0 ? '#dc2626' : undefined }}>
+              <p className="text-[11px] sm:text-[13px] text-slate-650 font-bold whitespace-normal">
+                Status Ketersediaan: <span className={(loading ? 0 : data?.kecamatan_tanpa_puskesmas || 0) > 0 ? 'font-black' : 'text-green-700 font-black'} style={{ color: (loading ? 0 : data?.kecamatan_tanpa_puskesmas || 0) > 0 ? '#dc2626' : undefined }}>
                   {(loading ? 0 : data?.kecamatan_tanpa_puskesmas || 0) > 0 ? 'Perlu Intervensi' : 'Ideal'}
                 </span>
               </p>
@@ -1345,8 +1418,8 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
           {/* Section header */}
           <div className="flex items-center justify-between mb-5 pb-4 border-b border-slate-100">
             <div>
-              <h3 className="text-lg sm:text-[22px] font-black text-[#047D78] uppercase tracking-wide leading-tight">Analitik Pertumbuhan & Kepatuhan Nakes</h3>
-              <p className="text-sm sm:text-[15px] font-medium text-slate-500 mt-1.5 leading-relaxed">Data teregistrasi 2021–2026 · Standar 9 Jenis Tenaga Kesehatan Wajib</p>
+              <h3 className="text-xl sm:text-[26px] font-black text-[#047D78] uppercase tracking-wide leading-tight">Analitik Pertumbuhan & Kepatuhan Nakes</h3>
+              <p className="text-base sm:text-[17px] font-bold text-slate-600 mt-1.5 leading-relaxed">Data teregistrasi 2021–2026 · Standar 9 Jenis Tenaga Kesehatan Wajib</p>
             </div>
             <span className="text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-100 rounded-full px-3 py-1 uppercase tracking-wider">{getRegionLabel()}</span>
           </div>
@@ -1355,8 +1428,8 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
             {/* Sub-column 1: Area/Line Chart — Tren Pertumbuhan */}
             <div className="flex flex-col h-full">
               <div className="mb-4">
-                <h4 className="text-base sm:text-lg font-extrabold text-slate-800 leading-tight">Tren Pertumbuhan Puskesmas Teregistrasi</h4>
-                <p className="text-sm sm:text-[15px] font-medium text-slate-500 mt-1 leading-relaxed">
+                <h4 className="text-lg sm:text-[21px] font-black text-slate-900 leading-tight">Tren Pertumbuhan Puskesmas Teregistrasi</h4>
+                <p className="text-sm sm:text-[16px] font-bold text-slate-650 mt-1 leading-relaxed">
                   Jumlah puskesmas yang teregistrasi secara digital dari tahun 2021 hingga 2026.
                 </p>
               </div>
@@ -1405,8 +1478,8 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
             {/* Sub-column 2: Donut Chart — Kepatuhan 9 Nakes */}
             <div className="flex flex-col h-full border-t lg:border-t-0 lg:border-l border-slate-100 pt-5 lg:pt-0 lg:pl-8">
               <div className="mb-4">
-                <h4 className="text-base sm:text-lg font-extrabold text-slate-800 leading-tight">Kepatuhan Standar 9 Jenis Nakes</h4>
-                <p className="text-sm sm:text-[15px] font-medium text-slate-500 mt-1 leading-relaxed">
+                <h4 className="text-lg sm:text-[21px] font-black text-slate-900 leading-tight">Kepatuhan Standar 9 Jenis Nakes</h4>
+                <p className="text-sm sm:text-[16px] font-bold text-slate-650 mt-1 leading-relaxed">
                   Proporsi puskesmas yang memenuhi standard minimal 9 jenis nakes wajib.
                 </p>
               </div>
@@ -1666,21 +1739,45 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
             borderBottomLeftRadius: '17px',
           }}
         >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between border-b border-slate-100 pb-4 mb-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between border-b border-slate-100 pb-4 mb-4 gap-4">
             <div>
-              <h3 className="text-lg sm:text-[22px] font-black text-slate-900 uppercase tracking-wide leading-tight">
+              <h3 className="text-xl sm:text-[26px] font-black text-slate-900 uppercase tracking-wide leading-tight">
                 TABEL CAPAIAN KINERJA PUSKESMAS PER WILAYAH - {getRegionLabel()}
               </h3>
-              <p className="text-sm sm:text-[15px] font-medium text-slate-500 mt-1.5 leading-relaxed">
+              <p className="text-base sm:text-[17px] font-bold text-slate-600 mt-1.5 leading-relaxed">
                 Rekapitulasi status evaluasi, kapasitas tempat tidur (Rawat Inap), dan indeks kepatuhan standard fasilitas kesehatan.
               </p>
+            </div>
+
+            {/* Action Controls */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              {/* Search Input */}
+              <div className="relative flex-1 min-w-[220px] sm:flex-none">
+                <input
+                  type="text"
+                  value={tableSearchQuery}
+                  onChange={(e) => setTableSearchQuery(e.target.value)}
+                  placeholder="Cari Wilayah..."
+                  className="w-full sm:w-[260px] rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-xs font-semibold text-slate-800 placeholder-slate-400 outline-none transition focus:border-[#047D78] focus:bg-white focus:ring-1 focus:ring-[#047D78]"
+                />
+                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+              </div>
+
+              {/* Export CSV Button */}
+              <button
+                onClick={handleExportTableCSV}
+                className="flex items-center justify-center gap-2 rounded-xl bg-[#047D78] hover:bg-[#036662] text-white px-4 py-2 text-xs font-bold shadow-[0_4px_10px_rgba(4,125,120,0.15)] transition active:scale-[0.98]"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Ekspor CSV</span>
+              </button>
             </div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full text-left text-sm border-collapse">
               <thead>
-                <tr className="border-b border-slate-200 text-slate-400 font-extrabold uppercase tracking-wider">
+                <tr className="border-b border-slate-200 text-slate-700 font-extrabold uppercase tracking-wider text-[11px] sm:text-xs">
                   <th className="py-3.5 px-4">Wilayah (Kabupaten/Kota)</th>
                   <th className="py-3.5 px-4 text-center">Total Puskesmas</th>
                   <th className="py-3.5 px-4 text-center">Rawat Inap</th>
@@ -1691,68 +1788,74 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
                   <th className="py-3.5 px-4 text-center">Status Evaluasi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+              <tbody className="divide-y divide-slate-100 font-bold text-slate-700">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-slate-400 italic">
+                    <td colSpan={8} className="py-8 text-center text-slate-500 italic">
                       Memuat data tabel...
                     </td>
                   </tr>
                 ) : !data?.wilayah_breakdown || data.wilayah_breakdown.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-slate-400 italic">
+                    <td colSpan={8} className="py-8 text-center text-slate-500 italic">
                       Tidak ada data wilayah untuk filter terpilih.
                     </td>
                   </tr>
+                ) : filteredWilayahBreakdown.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-8 text-center text-slate-500 italic">
+                      Tidak ada data wilayah yang cocok dengan "{tableSearchQuery}".
+                    </td>
+                  </tr>
                 ) : (
-                  data.wilayah_breakdown.map((wil, idx) => {
+                  filteredWilayahBreakdown.map((wil, idx) => {
                     const statusColors = {
-                      Baik: 'bg-emerald-50 text-emerald-700 border-emerald-150',
-                      Sedang: 'bg-amber-50 text-amber-700 border-amber-150',
-                      Kurang: 'bg-red-50 text-red-700 border-red-150',
+                      Baik: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                      Sedang: 'bg-amber-50 text-amber-800 border-amber-200',
+                      Kurang: 'bg-red-50 text-red-800 border-red-200',
                     }
                     const badgeClass = statusColors[wil.status] || statusColors.Sedang
 
                     return (
                       <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-3.5 px-4 font-bold text-slate-800 uppercase tracking-wide">
+                        <td className="py-3.5 px-4 font-black text-slate-900 uppercase tracking-wide text-xs sm:text-sm">
                           {wil.nama}
                         </td>
-                        <td className="py-3.5 px-4 text-center font-bold text-slate-900">
+                        <td className="py-3.5 px-4 text-center font-black text-slate-950 text-sm sm:text-base">
                           {wil.total_puskesmas}
                         </td>
-                        <td className="py-3.5 px-4 text-center text-[#0f8f96] font-semibold">
+                        <td className="py-3.5 px-4 text-center text-[#0b6c72] font-black text-sm sm:text-base">
                           {wil.ranap}
                         </td>
-                        <td className="py-3.5 px-4 text-center text-slate-500 font-semibold">
+                        <td className="py-3.5 px-4 text-center text-slate-800 font-black text-sm sm:text-base">
                           {wil.non_ranap}
                         </td>
                         <td className="py-3.5 px-4 text-center">
                           <div className="flex items-center justify-center gap-1.5">
-                            <div className="w-12 bg-slate-100 h-1.5 rounded-full overflow-hidden shrink-0">
-                              <div className="bg-teal-500 h-full" style={{ width: `${wil.alkes_pct}%` }} />
+                            <div className="w-12 bg-slate-150 h-2 rounded-full overflow-hidden shrink-0 border border-slate-200">
+                              <div className="bg-teal-600 h-full animate-pulse" style={{ width: `${wil.alkes_pct}%` }} />
                             </div>
-                            <span className="font-bold">{wil.alkes_pct}%</span>
+                            <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{wil.alkes_pct}%</span>
                           </div>
                         </td>
                         <td className="py-3.5 px-4 text-center">
                           <div className="flex items-center justify-center gap-1.5">
-                            <div className="w-12 bg-slate-100 h-1.5 rounded-full overflow-hidden shrink-0">
-                              <div className="bg-teal-500 h-full" style={{ width: `${wil.obat_pct}%` }} />
+                            <div className="w-12 bg-slate-150 h-2 rounded-full overflow-hidden shrink-0 border border-slate-200">
+                              <div className="bg-[#585af6] h-full" style={{ width: `${wil.obat_pct}%` }} />
                             </div>
-                            <span className="font-bold">{wil.obat_pct}%</span>
+                            <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{wil.obat_pct}%</span>
                           </div>
                         </td>
                         <td className="py-3.5 px-4 text-center">
                           <div className="flex items-center justify-center gap-1.5">
-                            <div className="w-12 bg-slate-100 h-1.5 rounded-full overflow-hidden shrink-0">
-                              <div className="bg-teal-500 h-full" style={{ width: `${wil.nakes_pct}%` }} />
+                            <div className="w-12 bg-slate-150 h-2 rounded-full overflow-hidden shrink-0 border border-slate-200">
+                              <div className="bg-emerald-600 h-full" style={{ width: `${wil.nakes_pct}%` }} />
                             </div>
-                            <span className="font-bold">{wil.nakes_pct}%</span>
+                            <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{wil.nakes_pct}%</span>
                           </div>
                         </td>
                         <td className="py-3.5 px-4 text-center">
-                          <span className={`inline-flex items-center rounded-lg border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${badgeClass}`}>
+                          <span className={`inline-flex items-center rounded-lg border px-3 py-1 text-xs font-black uppercase tracking-wider ${badgeClass}`}>
                             {wil.status}
                           </span>
                         </td>

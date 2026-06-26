@@ -419,13 +419,13 @@ export default function FilterDropdownBar({
     <div ref={rootRef} className="w-full">
       {/* Single unified label */}
       {showLabel && (
-        <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.12em] mb-1.5">
+        <p className="text-xs sm:text-[14px] font-black text-slate-500 uppercase tracking-[0.12em] mb-1.5">
           Filter Wilayah
         </p>
       )}
 
       {/* Unified pill bar */}
-      <div className="flex items-center rounded-2xl border border-[#e5e7eb] bg-white p-1.5">
+      <div className="flex items-center rounded-2xl border border-[#e5e7eb] bg-white p-2">
         {activeFilterData.map((filter, idx) => {
           const activeOption =
             filter.options.find((o) => o.value === selected[filter.id]) ?? filter.options[0]
@@ -437,7 +437,7 @@ export default function FilterDropdownBar({
             <div key={filter.id} className="relative flex flex-1 items-center">
               {/* Divider between segments */}
               {idx > 0 && (
-                <span className="h-7 w-px flex-shrink-0 bg-[#e5e7eb]" aria-hidden="true" />
+                <span className="h-9 w-px flex-shrink-0 bg-[#e5e7eb]" aria-hidden="true" />
               )}
 
               <button
@@ -450,7 +450,7 @@ export default function FilterDropdownBar({
                 aria-haspopup="listbox"
                 title={locked ? 'Filter dikunci sesuai wilayah akun' : undefined}
                 className={`
-                  group flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2
+                  group flex w-full items-center gap-3 sm:gap-3.5 rounded-xl px-4 py-2.5
                   transition-colors duration-150
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-[#17b7b2]
                   ${isOpen ? 'bg-[#f3f4f6]' : ''}
@@ -459,25 +459,25 @@ export default function FilterDropdownBar({
               >
                 {/* Colored icon badge */}
                 <span
-                  className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg ${bg}`}
+                  className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl ${bg}`}
                   aria-hidden="true"
                 >
-                  <FilterIcon icon={filter.icon} className={`h-4 w-4 ${color}`} />
+                  <FilterIcon icon={filter.icon} className={`h-5 w-5 ${color}`} />
                 </span>
 
                 {/* Sublabel + value stacked */}
-                <span className="flex min-w-0 flex-col items-start gap-0.5">
-                  <span className="text-[10px] font-medium leading-none text-[#9ca3af]">
+                <span className="flex min-w-0 flex-col items-start gap-1">
+                  <span className="text-[11px] sm:text-[13px] font-extrabold leading-none text-slate-500">
                     {filter.sublabel}
                   </span>
-                  <span className="truncate text-[14px] font-semibold leading-none text-[#111827]">
+                  <span className="truncate text-[13px] sm:text-[16px] font-black leading-none text-[#0f172a]">
                     {activeOption.label}
                   </span>
                 </span>
 
                 <ChevronDown
                   className={`
-                    ml-auto h-4 w-4 flex-shrink-0 text-[#9ca3af]
+                    ml-auto h-5 w-5 flex-shrink-0 text-[#9ca3af]
                     transition-transform duration-200
                     ${isOpen ? 'rotate-180' : ''}
                     ${locked ? 'opacity-30' : ''}
@@ -490,7 +490,7 @@ export default function FilterDropdownBar({
                 <div
                   role="listbox"
                   className="
-                    absolute left-0 top-[calc(100%+8px)] z-30 min-w-[180px]
+                    absolute left-0 top-[calc(100%+8px)] z-30 min-w-[200px]
                     overflow-hidden rounded-2xl border border-[#e5e7eb]
                     bg-white shadow-[0_8px_24px_rgba(0,0,0,0.10)]
                     max-h-[300px] overflow-y-auto scrollbar-thin
@@ -537,17 +537,17 @@ export default function FilterDropdownBar({
                           setOpenId(null)
                         }}
                         className={`
-                          flex w-full items-center gap-2.5 px-4 py-2.5 text-left
-                          text-[13px] transition-colors duration-100
+                          flex w-full items-center gap-3 px-5 py-3 text-left
+                          text-[12px] sm:text-[15px] font-bold transition-colors duration-100
                           ${isSelected
-                            ? 'bg-[#f0fdf9] font-semibold text-[#0F6E56]'
+                            ? 'bg-[#f0fdf9] font-black text-[#0F6E56]'
                             : 'text-[#374151] hover:bg-[#f9fafb]'
                           }
                         `}
                       >
                         <span
                           className={`
-                            h-1.5 w-1.5 flex-shrink-0 rounded-full
+                            h-2 w-2 flex-shrink-0 rounded-full
                             ${isSelected ? 'bg-[#1D9E75]' : 'bg-transparent'}
                           `}
                         />

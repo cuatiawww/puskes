@@ -336,16 +336,16 @@ export default function PerformanceBreakdownTable({ selectedProvince = '' }: Per
   const renderPctBadge = (val: number) => {
     let classes = ''
     if (val >= 80) {
-      classes = 'bg-green-50 text-green-700 border-green-150'
+      classes = 'bg-green-50 text-green-805 border-green-200'
     } else if (val >= 70) {
-      classes = 'bg-amber-50 text-amber-700 border-amber-150'
+      classes = 'bg-amber-50 text-amber-805 border-amber-200'
     } else {
-      classes = 'bg-red-50 text-red-700 border-red-150'
+      classes = 'bg-red-50 text-red-805 border-red-200'
     }
 
     return (
       <span
-        className={`inline-flex items-center justify-center rounded-lg border px-2.5 py-1 text-[11px] font-bold tracking-wide transition-all ${classes}`}
+        className={`inline-flex items-center justify-center rounded-lg border px-3 py-1 text-xs sm:text-sm font-black tracking-wide transition-all ${classes}`}
       >
         {val}%
       </span>
@@ -356,14 +356,14 @@ export default function PerformanceBreakdownTable({ selectedProvince = '' }: Per
   const renderComplianceIcon = (val: boolean) => {
     if (val) {
       return (
-        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-50 text-green-600 border border-green-100 shadow-sm">
-          <Check className="h-3.5 w-3.5 font-bold" />
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-green-50 text-green-700 border border-green-200 shadow-sm">
+          <Check className="h-4.5 w-4.5 stroke-[3]" />
         </span>
       )
     }
     return (
-      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-50 text-amber-600 border border-amber-100 shadow-sm">
-        <Minus className="h-3.5 w-3.5 font-bold" />
+      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-amber-50 text-amber-705 border border-amber-200 shadow-sm">
+        <Minus className="h-4.5 w-4.5 stroke-[3]" />
       </span>
     )
   }
@@ -381,10 +381,10 @@ export default function PerformanceBreakdownTable({ selectedProvince = '' }: Per
       {/* Table Header Section */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between border-b border-slate-100 pb-4 mb-4 gap-4">
         <div>
-          <h3 className="text-lg sm:text-[22px] font-black text-slate-900 uppercase tracking-wide leading-tight">
+          <h3 className="text-xl sm:text-[26px] font-black text-slate-900 uppercase tracking-wide leading-tight">
             TABEL ANALISIS CAPAIAN KINERJA {isFiltered ? `WILAYAH - ${selectedProvince}` : 'PROVINSI (NASIONAL)'}
           </h3>
-          <p className="text-sm sm:text-[15px] font-medium text-slate-500 mt-1.5 leading-relaxed">
+          <p className="text-base sm:text-[17px] font-bold text-slate-600 mt-1.5 leading-relaxed">
             Matriks evaluasi tata kelola, indikator DLI 6.1 (SDMK & Kesiapan Alkes), serta DLI 10.1 (SDM & Pelaporan) tingkat {isFiltered ? 'kabupaten/kota' : 'provinsi'}.
           </p>
         </div>
@@ -415,11 +415,11 @@ export default function PerformanceBreakdownTable({ selectedProvince = '' }: Per
       </div>
 
       {/* Main Table Grid with horizontal overflow & sticky province column */}
-      <div className="overflow-x-auto rounded-xl border border-slate-100 shadow-sm relative no-scrollbar">
-        <table className="w-full text-left text-xs border-collapse min-w-[900px]">
+      <div className="overflow-x-auto rounded-xl border border-slate-150 shadow-sm relative no-scrollbar">
+        <table className="w-full text-left text-sm border-collapse min-w-[900px]">
           <thead>
             {/* Top Level Group Headers */}
-            <tr className="border-b border-slate-200 bg-slate-50/50 text-slate-800 font-extrabold uppercase tracking-wider text-[10px]">
+            <tr className="border-b border-slate-200 bg-slate-100/50 text-slate-900 font-extrabold uppercase tracking-wider text-[11px] sm:text-xs">
               <th rowSpan={2} className="py-4 px-4 sticky left-0 bg-slate-50/95 z-20 w-12 text-center border-r border-slate-100">
                 NO
               </th>
@@ -429,18 +429,18 @@ export default function PerformanceBreakdownTable({ selectedProvince = '' }: Per
               <th rowSpan={2} className="py-4 px-4 text-center font-bold border-r border-slate-100">
                 Jumlah Puskesmas
               </th>
-              <th colSpan={3} className="py-3 px-4 text-center font-extrabold text-slate-900 border-r border-slate-100 bg-slate-100/30">
+              <th colSpan={3} className="py-3 px-4 text-center font-black text-slate-950 border-r border-slate-100 bg-slate-100/40">
                 Tata Kelola Baik
               </th>
-              <th colSpan={2} className="py-3 px-4 text-center font-extrabold text-slate-900 border-r border-slate-100 bg-slate-100/10">
+              <th colSpan={2} className="py-3 px-4 text-center font-black text-slate-950 border-r border-slate-100 bg-slate-100/20">
                 DLI 6.1
               </th>
-              <th colSpan={2} className="py-3 px-4 text-center font-extrabold text-slate-900 bg-slate-100/30">
+              <th colSpan={2} className="py-3 px-4 text-center font-black text-slate-950 bg-slate-100/40">
                 DLI 10.1
               </th>
             </tr>
             {/* Sub headers (Columns with sorting interaction) */}
-            <tr className="border-b border-slate-200 bg-slate-50/50 text-slate-500 font-bold uppercase tracking-wider text-[9px] select-none">
+            <tr className="border-b border-slate-200 bg-slate-50/50 text-slate-700 font-extrabold uppercase tracking-wider text-[10px] sm:text-[11px] select-none">
               {/* Tata Kelola Baik Sub-headers */}
               <th
                 onClick={() => handleSort('blud')}
@@ -509,17 +509,17 @@ export default function PerformanceBreakdownTable({ selectedProvince = '' }: Per
               </th>
             </tr>
           </thead>
-
-          <tbody className="divide-y divide-slate-100 font-medium text-slate-700 bg-white">
+ 
+          <tbody className="divide-y divide-slate-100 font-bold text-slate-700 bg-white">
             {fetchingKab ? (
               <tr>
-                <td colSpan={10} className="py-10 text-center text-slate-400 italic font-semibold">
+                <td colSpan={10} className="py-10 text-center text-slate-500 italic font-semibold">
                   Memuat daftar kabupaten/kota...
                 </td>
               </tr>
             ) : processedData.length === 0 ? (
               <tr>
-                <td colSpan={10} className="py-10 text-center text-slate-400 italic font-semibold">
+                <td colSpan={10} className="py-10 text-center text-slate-500 italic font-semibold">
                   Tidak ada data {isFiltered ? 'kabupaten/kota' : 'provinsi'} yang cocok dengan "{searchQuery}".
                 </td>
               </tr>
@@ -530,15 +530,15 @@ export default function PerformanceBreakdownTable({ selectedProvince = '' }: Per
                   className="hover:bg-slate-50/50 transition-colors odd:bg-slate-50/[0.15] even:bg-white"
                 >
                   {/* Sticky Number */}
-                  <td className="py-3.5 px-4 text-center text-slate-400 font-semibold sticky left-0 bg-inherit z-10 border-r border-slate-100">
+                  <td className="py-3.5 px-4 text-center text-slate-600 font-extrabold sticky left-0 bg-inherit z-10 border-r border-slate-100 text-xs sm:text-sm">
                     {idx + 1}
                   </td>
                   {/* Sticky Province/Kabupaten Column */}
-                  <td className="py-3.5 px-5 font-bold text-slate-900 sticky left-12 bg-inherit z-10 border-r border-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] uppercase tracking-wide">
+                  <td className="py-3.5 px-5 font-black text-slate-950 sticky left-12 bg-inherit z-10 border-r border-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] uppercase tracking-wide text-xs sm:text-sm">
                     {item.provinsi}
                   </td>
                   {/* Jumlah Puskesmas */}
-                  <td className="py-3.5 px-4 text-center font-bold text-slate-950 border-r border-slate-100">
+                  <td className="py-3.5 px-4 text-center font-black text-slate-950 border-r border-slate-100 text-sm sm:text-base">
                     {item.jumlahPuskesmas}
                   </td>
                   {/* Tata Kelola Baik percentages (BLUD, ILP, PKP) */}
