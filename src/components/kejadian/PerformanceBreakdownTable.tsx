@@ -381,10 +381,10 @@ export default function PerformanceBreakdownTable({ selectedProvince = '' }: Per
       {/* Table Header Section */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between border-b border-slate-100 pb-4 mb-4 gap-4">
         <div>
-          <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider">
+          <h3 className="text-lg sm:text-[22px] font-black text-slate-900 uppercase tracking-wide leading-tight">
             TABEL ANALISIS CAPAIAN KINERJA {isFiltered ? `WILAYAH - ${selectedProvince}` : 'PROVINSI (NASIONAL)'}
           </h3>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-sm sm:text-[15px] font-medium text-slate-500 mt-1.5 leading-relaxed">
             Matriks evaluasi tata kelola, indikator DLI 6.1 (SDMK & Kesiapan Alkes), serta DLI 10.1 (SDM & Pelaporan) tingkat {isFiltered ? 'kabupaten/kota' : 'provinsi'}.
           </p>
         </div>

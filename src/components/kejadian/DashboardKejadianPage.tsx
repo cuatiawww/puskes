@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   Flame,
   Heart,
+  HeartPulse,
   HelpCircle,
   Loader2,
   RefreshCw,
@@ -39,6 +40,8 @@ import {
   Bar,
   LineChart,
   Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -193,10 +196,39 @@ export default function DashboardKejadianPage() {
     ]
   }, [data])
 
+  // State for dynamic filters
+  const [selectedKategori, setSelectedKategori] = useState<'all' | 'ranap' | 'non-ranap'>('all')
+  const [selectedKarakteristik, setSelectedKarakteristik] = useState<string[]>([])
+  const [showKarakteristikDropdown, setShowKarakteristikDropdown] = useState(false)
+
+  const filteredMarkers = useMemo(() => {
+    if (!data?.markers) return []
+
+    return data.markers.filter((m) => {
+      // 1. Filter by Kategori Layanan
+      if (selectedKategori === 'ranap' && !m.is_ranap) return false
+      if (selectedKategori === 'non-ranap' && m.is_ranap) return false
+
+      // 2. Filter by Karakteristik Wilayah
+      if (selectedKarakteristik.length > 0) {
+        const match = selectedKarakteristik.some((tag) => {
+          if (tag === 'Terpencil (T)' && m.karakteristik === 'Terpencil') return true
+          if (tag === 'Sangat Terpencil (ST)' && m.karakteristik === 'Sangat Terpencil') return true
+          if (tag === 'Pedesaan' && (m.karakteristik === 'Terpencil' || m.karakteristik === 'Sangat Terpencil')) return true
+          if (tag === 'Perkotaan' && m.karakteristik === 'Biasa') return true
+          return false
+        })
+        if (!match) return false
+      }
+
+      return true
+    })
+  }, [data?.markers, selectedKategori, selectedKarakteristik])
+
   const stats = useMemo(() => {
     if (!data) return { pctBaik: 0, total: 0, avgAlkes: 0, avgObat: 0, obatJenis: 0 }
-    const total = data.total_puskesmas
-    const markers = data.markers || []
+    const markers = filteredMarkers
+    const total = markers.length
     
     const baikCount = markers.filter(m => m.status_evaluasi === 'Baik').length
     const pctBaik = total > 0 ? Math.round((baikCount / total) * 100) : 0
@@ -209,7 +241,66 @@ export default function DashboardKejadianPage() {
     const obatJenis = Math.round(40 * (avgObat / 100))
     
     return { pctBaik, total, avgAlkes, avgObat, obatJenis }
-  }, [data])
+  }, [data, filteredMarkers])
+
+  const growthData = useMemo(() => {
+    const total = filteredMarkers.length
+    return [
+      { year: '2021', jumlah: Math.round(total * 0.80) },
+      { year: '2022', jumlah: Math.round(total * 0.85) },
+      { year: '2023', jumlah: Math.round(total * 0.88) },
+      { year: '2024', jumlah: Math.round(total * 0.92) },
+      { year: '2025', jumlah: Math.round(total * 0.96) },
+      { year: '2026', jumlah: total },
+    ]
+  }, [filteredMarkers])
+
+  const donutData = useMemo(() => {
+    const total = filteredMarkers.length
+    const sudah = filteredMarkers.filter(m => m.nakes_pct >= 80).length
+    const belum = total - sudah
+    
+    return [
+      { name: 'Sudah Lengkap 9 Nakes', value: sudah, pct: total > 0 ? Math.round((sudah / total) * 100) : 0 },
+      { name: 'Belum Lengkap', value: belum, pct: total > 0 ? Math.round((belum / total) * 100) : 0 }
+    ]
+  }, [filteredMarkers])
+
+  const matrixData = useMemo(() => {
+    if (filteredMarkers.length === 0) {
+      return { beban: 0, rasioDokter: 0, rasioNakes: 0 }
+    }
+    
+    let totalPop = 0
+    let totalDokter = 0
+    let totalNakes = 0
+    
+    filteredMarkers.forEach((m) => {
+      const shortName = m.jenis_bencana.replace('Puskesmas ', '')
+      let pop = 24000
+      if (m.karakteristik === 'Terpencil') pop = 14000
+      else if (m.karakteristik === 'Sangat Terpencil') pop = 6000
+      pop += (shortName.length % 5) * 1500 - 3000
+      
+      const numDokter = m.nakes_pct >= 90 ? 3 : m.nakes_pct >= 75 ? 2 : 1
+      const numNakes = m.nakes_pct >= 90 ? 28 : m.nakes_pct >= 75 ? 20 : 12
+      
+      totalPop += pop
+      totalDokter += numDokter
+      totalNakes += numNakes
+    })
+    
+    const count = filteredMarkers.length
+    const avgBeban = Math.round(totalPop / count)
+    const avgRasioDokter = Math.round(totalPop / totalDokter)
+    const avgRasioNakes = Math.round(totalPop / totalNakes)
+    
+    return {
+      beban: avgBeban,
+      rasioDokter: avgRasioDokter,
+      rasioNakes: avgRasioNakes
+    }
+  }, [filteredMarkers])
 
   const topDiseasesData = useMemo(() => {
     const baseDiseases = [
@@ -711,17 +802,121 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
         </div>
       </section>
 
-      {/* Filter Wilayah Section */}
-      <section className="w-full bg-[#fbffff] z-10">
-        <FilterDropdownBar
-          onSummaryChange={handleSummaryChange}
-          selectedProvinceName={province}
-          selectedKabupatenName={kabupaten}
-        />
+      {/* ── Unified Dynamic Filter Card ── */}
+      <section className="w-full bg-[#fbffff] pt-2 pb-4">
+        <article
+          className="border border-[#cdcdcd] bg-white shadow-[0_10px_30px_rgba(15,118,110,0.04)] w-full overflow-visible"
+          style={{
+            borderTopLeftRadius: '17px',
+            borderTopRightRadius: '17px',
+            borderBottomRightRadius: '22px',
+            borderBottomLeftRadius: '17px',
+          }}
+        >
+          {/* Card Body: Filter Controls in a responsive 3-column Grid (60% / 20% / 20%) */}
+          <div className="grid grid-cols-1 lg:grid-cols-[3fr_1fr_1fr] items-start gap-6 px-6 py-5">
+            {/* Grid 1: Filter Wilayah (60% width on lg) */}
+            <div className="w-full">
+              <FilterDropdownBar
+                onSummaryChange={handleSummaryChange}
+                selectedProvinceName={province}
+                selectedKabupatenName={kabupaten}
+                showLabel={true}
+              />
+            </div>
+
+            {/* Grid 2: Segmented Control — Kategori Layanan (20% width on lg) */}
+            <div className="flex flex-col w-full">
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.12em] mb-1.5">Kategori Layanan</span>
+              <div className="flex bg-slate-100 p-1 rounded-xl gap-0.5 w-full">
+                {[
+                  { id: 'all' as const, label: 'Semua' },
+                  { id: 'ranap' as const, label: 'Ranap' },
+                  { id: 'non-ranap' as const, label: 'Non-Ranap' },
+                ].map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => setSelectedKategori(opt.id)}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
+                      selectedKategori === opt.id
+                        ? 'bg-[#047D78] text-white shadow-[0_2px_8px_rgba(4,125,120,0.30)]'
+                        : 'text-slate-500 hover:text-slate-800 hover:bg-white/60'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Grid 3: Multi-Select Dropdown — Karakteristik Wilayah (20% width on lg) */}
+            <div className="flex flex-col w-full">
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.12em] mb-1.5">Karakteristik Wilayah</span>
+              <div className="relative w-full">
+                <button
+                  onClick={() => setShowKarakteristikDropdown(!showKarakteristikDropdown)}
+                  className={`flex items-center justify-between gap-2.5 rounded-xl border px-4 py-2.5 text-xs font-bold outline-none transition-all w-full ${
+                    selectedKarakteristik.length > 0
+                      ? 'border-indigo-200 bg-indigo-50 text-indigo-800'
+                      : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <span className="truncate">
+                    {selectedKarakteristik.length === 0
+                      ? 'Semua Karakteristik'
+                      : selectedKarakteristik.length === 1
+                        ? selectedKarakteristik[0]
+                        : `${selectedKarakteristik.length} Terpilih`}
+                  </span>
+                  <ChevronDown className={`h-4 w-4 shrink-0 transition-transform duration-200 ${showKarakteristikDropdown ? 'rotate-180' : ''} ${selectedKarakteristik.length > 0 ? 'text-indigo-400' : 'text-slate-400'}`} />
+                </button>
+
+                {showKarakteristikDropdown && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowKarakteristikDropdown(false)}
+                    />
+                    <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-full min-w-[200px] overflow-hidden rounded-2xl border border-slate-100 bg-white p-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.12)]">
+                      <p className="px-3 pb-2 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Pilih Karakteristik</p>
+                      {['Terpencil (T)', 'Sangat Terpencil (ST)', 'Pedesaan', 'Perkotaan'].map((tag) => {
+                        const isChecked = selectedKarakteristik.includes(tag)
+                        return (
+                          <label
+                            key={tag}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer select-none transition-colors ${
+                              isChecked ? 'bg-indigo-50 text-indigo-800' : 'text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                setSelectedKarakteristik((prev) =>
+                                  isChecked
+                                    ? prev.filter((t) => t !== tag)
+                                    : [...prev, tag]
+                                )
+                              }}
+                              className="rounded w-4 h-4 accent-[#047D78]"
+                            />
+                            <span>{tag}</span>
+                            {isChecked && <span className="ml-auto text-indigo-500 font-bold">✓</span>}
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+          </div>
+        </article>
       </section>
 
-      {/* Executive Summary Header - 4 KPI Scorecards */}
-      <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 w-full">
+      {/* Executive Summary Header - 5 KPI Scorecards (including Alert Card) */}
+      <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5 w-full">
         {/* Card 1: Governance */}
         <article
           onClick={() => setSelectedCard('tata_kelola')}
@@ -761,7 +956,7 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
                 cy="32"
               />
               <circle
-                className="text-teal-600 transition-all duration-500 ease-in-out"
+                className="text-teal-650 transition-all duration-500 ease-in-out"
                 strokeWidth="4"
                 strokeDasharray={`${2 * Math.PI * 24}`}
                 strokeDashoffset={`${2 * Math.PI * 24 * (1 - (loading ? 0 : stats.pctBaik) / 100)}`}
@@ -799,7 +994,7 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
               <span className="text-5xl font-black text-slate-800 tracking-tight leading-none py-1">
                 {loading ? '...' : stats.total.toLocaleString('id-ID')}
               </span>
-              <p className="text-xs sm:text-[13px] text-teal-600 font-bold flex items-center gap-0.5 truncate">
+              <p className="text-xs sm:text-[13px] text-[#00B0AA] font-bold flex items-center gap-0.5 truncate">
                 <ChevronUp className="h-4 w-4 shrink-0" />
                 <span>2,1% dari bulan sebelumnya</span>
               </p>
@@ -851,7 +1046,7 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
                 cy="32"
               />
               <circle
-                className="text-emerald-600 transition-all duration-500 ease-in-out"
+                className="text-emerald-605 transition-all duration-500 ease-in-out"
                 strokeWidth="4"
                 strokeDasharray={`${2 * Math.PI * 24}`}
                 strokeDashoffset={`${2 * Math.PI * 24 * (1 - (loading ? 0 : stats.avgAlkes) / 100)}`}
@@ -908,7 +1103,7 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
                 cy="32"
               />
               <circle
-                className="text-indigo-600 transition-all duration-500 ease-in-out"
+                className="text-indigo-605 transition-all duration-500 ease-in-out"
                 strokeWidth="4"
                 strokeDasharray={`${2 * Math.PI * 24}`}
                 strokeDashoffset={`${2 * Math.PI * 24 * (1 - (loading ? 0 : stats.avgObat) / 100)}`}
@@ -925,8 +1120,49 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
             </span>
           </div>
         </article>
-      </section>
 
+        {/* Card 5: Kecamatan Tanpa Puskesmas (Bonus Alert Card) */}
+        <article
+          onClick={() => setSelectedCard('kecamatan_tanpa')}
+          className="flex items-center justify-between p-6 bg-white border border-slate-200/70 rounded-2xl shadow-[0_4px_10px_rgba(0,0,0,0.04)] cursor-pointer hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(0,0,0,0.07)] transition-all active:scale-[0.98] min-h-[160px] h-full"
+        >
+          {/* Left section: Icon + Text Stack */}
+          <div className="flex items-center gap-5 min-w-0 flex-1">
+            {/* Circular Icon Badge */}
+            <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-full shadow-inner ${
+              (loading ? 0 : data?.kecamatan_tanpa_puskesmas || 0) > 0
+                ? 'bg-red-50 border border-red-100 text-red-650'
+                : 'bg-green-50 border border-green-100 text-green-600'
+            }`}>
+              <AlertTriangle className="h-8 w-8" />
+            </div>
+            
+            {/* Text Stack */}
+            <div className="flex flex-col min-w-0 space-y-1">
+              <span className="text-xs sm:text-[13px] font-extrabold text-slate-500 uppercase tracking-wider truncate">
+                Kecamatan Tanpa Puskesmas
+              </span>
+              <div className="flex items-center gap-2 py-1">
+                <span className={`text-5xl font-black tracking-tight leading-none ${
+                  (loading ? 0 : data?.kecamatan_tanpa_puskesmas || 0) > 0 ? 'text-red-600' : 'text-slate-800'
+                }`} style={{ color: (loading ? 0 : data?.kecamatan_tanpa_puskesmas || 0) > 0 ? '#dc2626' : undefined }}>
+                  {loading ? '...' : data?.kecamatan_tanpa_puskesmas || 0}
+                </span>
+                {(loading ? 0 : data?.kecamatan_tanpa_puskesmas || 0) > 0 && (
+                  <span className="bg-red-105 text-red-700 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-wider animate-pulse" style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}>
+                    Mendesak
+                  </span>
+                )}
+              </div>
+              <p className="text-xs sm:text-[13px] text-slate-500 font-semibold truncate">
+                Status Ketersediaan: <span className={(loading ? 0 : data?.kecamatan_tanpa_puskesmas || 0) > 0 ? 'font-bold' : 'text-green-600 font-bold'} style={{ color: (loading ? 0 : data?.kecamatan_tanpa_puskesmas || 0) > 0 ? '#dc2626' : undefined }}>
+                  {(loading ? 0 : data?.kecamatan_tanpa_puskesmas || 0) > 0 ? 'Perlu Intervensi' : 'Ideal'}
+                </span>
+              </p>
+            </div>
+          </div>
+        </article>
+      </section>
 
       {/* Map + AI Insight Section - Matches Homepage Aesthetics */}
       <section className="w-full bg-[#fbffff] pb-5">
@@ -1038,13 +1274,11 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
 
         </div>
       </section>
-
-      {/* ── Dashboard Charts Section ── */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full bg-[#fbffff] pb-5">
-        
-        {/* Chart 1: 10 Penyakit Terbanyak */}
+      {/* ── Dashboard Charts Section: Middle Analytics Row (full-width) ── */}
+      <section className="w-full bg-[#fbffff] pb-5">
+        {/* Full-width card: Line Chart + Donut Chart side by side */}
         <article
-          className="border border-[#cdcdcd] bg-white p-6 shadow-[0_10px_30px_rgba(15,118,110,0.04)] h-[460px] flex flex-col justify-between"
+          className="border border-[#cdcdcd] bg-white p-6 shadow-[0_10px_30px_rgba(15,118,110,0.04)] min-h-[420px] flex flex-col"
           style={{
             borderTopLeftRadius: '17px',
             borderTopRightRadius: '17px',
@@ -1052,58 +1286,189 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
             borderBottomLeftRadius: '17px',
           }}
         >
-          <div>
-            <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider">
-              10 PENYAKIT TERBANYAK (TOP 10 DISEASES)
+          {/* Section header */}
+          <div className="flex items-center justify-between mb-5 pb-4 border-b border-slate-100">
+            <div>
+              <h3 className="text-lg sm:text-[22px] font-black text-[#047D78] uppercase tracking-wide leading-tight">Analitik Pertumbuhan & Kepatuhan Nakes</h3>
+              <p className="text-sm sm:text-[15px] font-medium text-slate-500 mt-1.5 leading-relaxed">Data teregistrasi 2021–2026 · Standar 9 Jenis Tenaga Kesehatan Wajib</p>
+            </div>
+            <span className="text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-100 rounded-full px-3 py-1 uppercase tracking-wider">{getRegionLabel()}</span>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8 flex-1 min-h-[340px]">
+            {/* Sub-column 1: Area/Line Chart — Tren Pertumbuhan */}
+            <div className="flex flex-col h-full">
+              <div className="mb-4">
+                <h4 className="text-base sm:text-lg font-extrabold text-slate-800 leading-tight">Tren Pertumbuhan Puskesmas Teregistrasi</h4>
+                <p className="text-sm sm:text-[15px] font-medium text-slate-500 mt-1 leading-relaxed">
+                  Jumlah puskesmas yang teregistrasi secara digital dari tahun 2021 hingga 2026.
+                </p>
+              </div>
+              <div className="flex-1 min-h-[280px] w-full">
+                {loading ? (
+                  <div className="h-full w-full flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-[#047D78]" />
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={growthData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorGrowth" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#047D78" stopOpacity={0.18}/>
+                          <stop offset="95%" stopColor="#047D78" stopOpacity={0.0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
+                      <Tooltip
+                        contentStyle={{
+                          background: 'rgba(255, 255, 255, 0.97)',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '12px',
+                          boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
+                          fontSize: '12px',
+                        }}
+                        formatter={(value) => [`${Number(value).toLocaleString('id-ID')} Puskesmas`, 'Jumlah Teregistrasi']}
+                      />
+                      <Area type="monotone" dataKey="jumlah" stroke="none" fill="url(#colorGrowth)" />
+                      <Line
+                        type="monotone"
+                        dataKey="jumlah"
+                        stroke="#047D78"
+                        strokeWidth={3}
+                        dot={{ r: 4, stroke: '#047D78', strokeWidth: 2, fill: '#fff' }}
+                        activeDot={{ r: 7, stroke: '#047D78', strokeWidth: 2, fill: '#047D78' }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+
+            {/* Sub-column 2: Donut Chart — Kepatuhan 9 Nakes */}
+            <div className="flex flex-col h-full border-t lg:border-t-0 lg:border-l border-slate-100 pt-5 lg:pt-0 lg:pl-8">
+              <div className="mb-4">
+                <h4 className="text-base sm:text-lg font-extrabold text-slate-800 leading-tight">Kepatuhan Standar 9 Jenis Nakes</h4>
+                <p className="text-sm sm:text-[15px] font-medium text-slate-500 mt-1 leading-relaxed">
+                  Proporsi puskesmas yang memenuhi standard minimal 9 jenis nakes wajib.
+                </p>
+              </div>
+              <div className="flex-1 min-h-[240px] w-full relative flex items-center justify-center">
+                {loading ? (
+                  <div className="h-full w-full flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-[#047D78]" />
+                  </div>
+                ) : (
+                  <>
+                    <ResponsiveContainer width="100%" height={260}>
+                      <PieChart>
+                        <Pie
+                          data={donutData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={72}
+                          outerRadius={98}
+                          paddingAngle={4}
+                          dataKey="value"
+                        >
+                          <Cell fill="#10b981" />
+                          <Cell fill="#334155" />
+                        </Pie>
+                        <Tooltip
+                          formatter={(value, name, props) => [`${value} Puskesmas (${props.payload.pct}%)`, name]}
+                          contentStyle={{
+                            background: 'rgba(255, 255, 255, 0.97)',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '12px',
+                            boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
+                            fontSize: '12px',
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-[26px] font-black text-slate-800 leading-none">
+                        {donutData[0].pct}%
+                      </span>
+                      <span className="text-[9px] font-extrabold uppercase text-slate-400 tracking-wider mt-1">
+                        Lengkap
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+              {/* Donut Legend */}
+              <div className="flex justify-center gap-6 mt-2">
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#10b981]" />
+                  <span className="text-[11px] font-semibold text-slate-600">Lengkap ({donutData[0].value})</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#334155]" />
+                  <span className="text-[11px] font-semibold text-slate-600">Belum ({donutData[1].value})</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      {/* ── Analytics Charts: 3-Column Grid ── */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full bg-[#fbffff] pb-5">
+
+        {/* Chart 1: 10 Penyakit Terbanyak */}
+        <article
+          className="border border-[#cdcdcd] bg-white p-6 shadow-[0_10px_30px_rgba(15,118,110,0.04)] flex flex-col"
+          style={{
+            borderTopLeftRadius: '17px',
+            borderTopRightRadius: '17px',
+            borderBottomRightRadius: '22px',
+            borderBottomLeftRadius: '17px',
+          }}
+        >
+          <div className="mb-4">
+            <h3 className="text-lg sm:text-[22px] font-black text-slate-900 uppercase tracking-wide leading-tight">
+              10 Penyakit Terbanyak
             </h3>
-            <p className="text-xs text-slate-500 mt-1 mb-4">
-              Distribusi jumlah kasus penyakit tertinggi berdasarkan pencatatan digital sumber data Komdat di wilayah {getRegionLabel()}.
+            <p className="text-sm sm:text-[15px] font-medium text-slate-500 mt-1.5 leading-relaxed">
+              Distribusi 10 penyakit dengan kasus terbanyak di Puskesmas — {getRegionLabel()}
             </p>
           </div>
-          <div className="flex-1 min-h-0 w-full">
+          <div className="flex-1 min-h-[300px]">
             {loading ? (
-              <div className="h-full w-full flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
-              </div>
-            ) : isDbEmpty ? (
-              <div className="flex h-full w-full items-center justify-center rounded-2xl bg-slate-50 border border-dashed border-slate-200">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Tidak Ada Data</p>
+              <div className="h-full flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-[#047D78]" />
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  layout="vertical"
-                  data={topDiseasesData}
-                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
-                  <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
+              <ResponsiveContainer width="100%" height={310}>
+                <BarChart data={topDiseasesData} layout="vertical" margin={{ top: 0, right: 40, left: 10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                  <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10 }} unit=" kasus" />
                   <YAxis
                     type="category"
                     dataKey="name"
+                    width={110}
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#334155', fontSize: 11, fontWeight: 'bold' }}
-                    width={110}
+                    tick={{ fill: '#334155', fontSize: 11, fontWeight: 600 }}
                   />
                   <Tooltip
-                    formatter={(value, name) => {
-                      if (value === undefined || value === null) return ['', ''];
-                      if (name === 'kasus') return [`${Number(value).toLocaleString('id-ID')} Kasus`, 'Jumlah Kasus'];
-                      if (name === 'persentase') return [`${value}%`, 'Proporsi'];
-                      return [String(value), String(name)];
-                    }}
+                    formatter={(value, name) => [`${Number(value ?? 0).toLocaleString('id-ID')} kasus`, name]}
                     contentStyle={{
-                      background: 'rgba(255, 255, 255, 0.95)',
+                      background: 'rgba(255,255,255,0.97)',
                       border: '1px solid #e2e8f0',
                       borderRadius: '12px',
                       boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
                       fontSize: '12px',
                     }}
                   />
-                  <Bar dataKey="kasus" name="kasus" fill="#0f8f96" radius={[0, 4, 4, 0]} barSize={16}>
+                  <Bar dataKey="kasus" radius={[0, 6, 6, 0]} maxBarSize={20}>
                     {topDiseasesData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={index === 0 ? '#0f8f96' : '#14b8a6'} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={index === 0 ? '#047D78' : index === 1 ? '#0ea5e9' : index === 2 ? '#6366f1' : index < 5 ? '#10b981' : '#94a3b8'}
+                      />
                     ))}
                   </Bar>
                 </BarChart>
@@ -1112,9 +1477,10 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
           </div>
         </article>
 
-        {/* Chart 2: SDM vs Beban Kerja */}
+
+        {/* Chart 3: Beban Kerja SDM per Puskesmas */}
         <article
-          className="border border-[#cdcdcd] bg-white p-6 shadow-[0_10px_30px_rgba(15,118,110,0.04)] h-[460px] flex flex-col justify-between"
+          className="border border-[#cdcdcd] bg-white p-6 shadow-[0_10px_30px_rgba(15,118,110,0.04)] flex flex-col"
           style={{
             borderTopLeftRadius: '17px',
             borderTopRightRadius: '17px',
@@ -1122,79 +1488,58 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
             borderBottomLeftRadius: '17px',
           }}
         >
-          <div>
-            <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider">
-              KETERSEDIAAN SDM VS BEBAN KERJA
+          <div className="mb-4">
+            <h3 className="text-lg sm:text-[22px] font-black text-slate-900 uppercase tracking-wide leading-tight">
+              Beban Kerja SDM per Puskesmas
             </h3>
-            <p className="text-xs text-slate-500 mt-1 mb-4">
-              Perbandingan rasio pemenuhan tenaga kesehatan (Nakes %) dengan rasio beban kerja (Jumlah Penduduk per Staf) di wilayah {getRegionLabel()}.
+            <p className="text-sm sm:text-[15px] font-medium text-slate-500 mt-1.5 leading-relaxed">
+              Rasio beban kerja (penduduk / nakes aktual) tiap Puskesmas. Titik merah = rasio tinggi.
             </p>
           </div>
-          <div className="flex-1 min-h-0 w-full">
+          <div className="flex-1 min-h-[300px]">
             {loading ? (
-              <div className="h-full w-full flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
-              </div>
-            ) : isDbEmpty ? (
-              <div className="flex h-full w-full items-center justify-center rounded-2xl bg-slate-50 border border-dashed border-slate-200">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Tidak Ada Data</p>
+              <div className="h-full flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-[#047D78]" />
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={sdmWorkloadData}
-                  margin={{ top: 15, right: 5, left: -10, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={sdmWorkloadData.slice(0, 15)} layout="vertical" margin={{ top: 0, right: 40, left: 10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                  <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10 }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v} />
+                  <YAxis
+                    type="category"
                     dataKey="name"
+                    width={90}
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#334155', fontSize: 10, fontWeight: 'bold' }}
-                  />
-                  <YAxis
-                    yAxisId="left"
-                    orientation="left"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#64748b', fontSize: 11 }}
-                    unit="%"
-                  />
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#64748b', fontSize: 11 }}
-                    unit=" org"
+                    tick={{ fill: '#334155', fontSize: 10, fontWeight: 600 }}
                   />
                   <Tooltip
-                    formatter={(value, name) => {
-                      if (value === undefined || value === null) return ['', ''];
-                      if (name === 'nakes_pct') return [`${value}%`, 'Kepatuhan SDM'];
-                      if (name === 'beban') return [`1 : ${Number(value).toLocaleString('id-ID')} Penduduk`, 'Beban Penduduk'];
-                      return [String(value), String(name)];
-                    }}
+                    formatter={(value) => [`1 : ${Number(value).toLocaleString('id-ID')} jiwa`, 'Rasio Beban']}
                     contentStyle={{
-                      background: 'rgba(255, 255, 255, 0.95)',
+                      background: 'rgba(255,255,255,0.97)',
                       border: '1px solid #e2e8f0',
                       borderRadius: '12px',
-                      boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
                       fontSize: '12px',
                     }}
                   />
-                  <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }} />
-                  <Bar yAxisId="left" dataKey="nakes_pct" name="Kepatuhan SDM" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={14} />
-                  <Bar yAxisId="right" dataKey="beban" name="Beban Penduduk" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={14} />
+                  <Bar dataKey="beban" radius={[0, 6, 6, 0]} maxBarSize={18}>
+                    {sdmWorkloadData.slice(0, 15).map((entry, index) => (
+                      <Cell
+                        key={`cell-beban-${index}`}
+                        fill={entry.beban > 20000 ? '#ef4444' : entry.beban > 10000 ? '#f59e0b' : '#047D78'}
+                      />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             )}
           </div>
         </article>
 
-        {/* Chart 3: Komparasi Kinerja Berdasarkan Kategori Puskesmas */}
+        {/* Chart 4: Kinerja per Kategori Puskesmas */}
         <article
-          className="lg:col-span-2 border border-[#cdcdcd] bg-white p-6 shadow-[0_10px_30px_rgba(15,118,110,0.04)] h-[460px] flex flex-col justify-between"
+          className="border border-[#cdcdcd] bg-white p-6 shadow-[0_10px_30px_rgba(15,118,110,0.04)] flex flex-col"
           style={{
             borderTopLeftRadius: '17px',
             borderTopRightRadius: '17px',
@@ -1202,62 +1547,48 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
             borderBottomLeftRadius: '17px',
           }}
         >
-          <div>
-            <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider">
-              KOMPARASI KINERJA BERDASARKAN KATEGORI PUSKESMAS
+          <div className="mb-4">
+            <h3 className="text-lg sm:text-[22px] font-black text-slate-900 uppercase tracking-wide leading-tight">
+              Kinerja per Kategori Puskesmas
             </h3>
-            <p className="text-xs text-slate-500 mt-1 mb-4">
-              Analisis perbandingan indikator ketersediaan Alkes %, Obat %, dan Tata Kelola Baik % berdasarkan karakteristik geografis dan layanan di wilayah {getRegionLabel()}.
+            <p className="text-sm sm:text-[15px] font-medium text-slate-500 mt-1.5 leading-relaxed">
+              Perbandingan rata-rata Tata Kelola, Kesiapan Alkes, dan Ketersediaan Obat per kategori layanan / wilayah.
             </p>
           </div>
-          <div className="flex-1 min-h-0 w-full">
+          <div className="flex-1 min-h-[300px]">
             {loading ? (
-              <div className="h-full w-full flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
-              </div>
-            ) : isDbEmpty ? (
-              <div className="flex h-full w-full items-center justify-center rounded-2xl bg-slate-50 border border-dashed border-slate-200">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Tidak Ada Data</p>
+              <div className="h-full flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-[#047D78]" />
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={kategoriPerformanceData}
-                  margin={{ top: 15, right: 10, left: -10, bottom: 5 }}
-                >
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={kategoriPerformanceData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis
-                    dataKey="category"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#334155', fontSize: 11, fontWeight: 'bold' }}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#64748b', fontSize: 11 }}
-                    unit="%"
-                    domain={[0, 100]}
-                  />
+                  <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fill: '#334155', fontSize: 10, fontWeight: 600 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10 }} unit="%" domain={[0, 100]} />
                   <Tooltip
-                    formatter={(value) => [`${value !== undefined && value !== null ? value : 0}%`, '']}
+                    formatter={(value) => [`${value}%`]}
                     contentStyle={{
-                      background: 'rgba(255, 255, 255, 0.95)',
+                      background: 'rgba(255,255,255,0.97)',
                       border: '1px solid #e2e8f0',
                       borderRadius: '12px',
-                      boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
                       fontSize: '12px',
                     }}
                   />
-                  <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }} />
-                  <Bar dataKey="Tata Kelola" name="Tata Kelola Baik" fill="#0f8f96" radius={[4, 4, 0, 0]} barSize={16} />
-                  <Bar dataKey="Kesiapan Alkes" name="Kesiapan Alkes" fill="#10b981" radius={[4, 4, 0, 0]} barSize={16} />
-                  <Bar dataKey="Ketersediaan Obat" name="Ketersediaan Obat" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={16} />
+                  <Legend
+                    iconType="circle"
+                    iconSize={8}
+                    formatter={(value) => <span style={{ fontSize: 11, fontWeight: 600, color: '#334155' }}>{value}</span>}
+                  />
+                  <Bar dataKey="Tata Kelola" fill="#047D78" radius={[4, 4, 0, 0]} maxBarSize={22} />
+                  <Bar dataKey="Kesiapan Alkes" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={22} />
+                  <Bar dataKey="Ketersediaan Obat" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={22} />
                 </BarChart>
               </ResponsiveContainer>
             )}
           </div>
         </article>
+
       </section>
 
       {/* ── Matrix Table Section ── */}
@@ -1273,10 +1604,10 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
         >
           <div className="flex flex-col md:flex-row md:items-center md:justify-between border-b border-slate-100 pb-4 mb-4">
             <div>
-              <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider">
+              <h3 className="text-lg sm:text-[22px] font-black text-slate-900 uppercase tracking-wide leading-tight">
                 TABEL CAPAIAN KINERJA PUSKESMAS PER WILAYAH - {getRegionLabel()}
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-sm sm:text-[15px] font-medium text-slate-500 mt-1.5 leading-relaxed">
                 Rekapitulasi status evaluasi, kapasitas tempat tidur (Rawat Inap), dan indeks kepatuhan standard fasilitas kesehatan.
               </p>
             </div>

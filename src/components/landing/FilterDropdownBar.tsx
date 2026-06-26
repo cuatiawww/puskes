@@ -24,6 +24,7 @@ type FilterDropdownBarProps = {
   onSummaryChange?: (summary: FilterSummary) => void
   selectedProvinceName?: string | null
   selectedKabupatenName?: string | null
+  showLabel?: boolean
 }
 
 type RegionOption = {
@@ -59,7 +60,12 @@ function hasValidScopedMode(scope?: WilayahScope): scope is WilayahScope {
   return !!scope && SCOPED_MODES.includes(scope.mode)
 }
 
-export default function FilterDropdownBar({ onSummaryChange, selectedProvinceName, selectedKabupatenName }: FilterDropdownBarProps = {}) {
+export default function FilterDropdownBar({
+  onSummaryChange,
+  selectedProvinceName,
+  selectedKabupatenName,
+  showLabel = true,
+}: FilterDropdownBarProps = {}) {
   const userScope = useAuthStore((state) => state.user?.wilayah_scope)
 
   // Hanya benar-benar "scoped" jika mode dikenal (provinsi/kabupaten).
@@ -410,11 +416,13 @@ export default function FilterDropdownBar({ onSummaryChange, selectedProvinceNam
   }, [onSummaryChange, summary])
 
   return (
-    <div ref={rootRef}>
+    <div ref={rootRef} className="w-full">
       {/* Single unified label */}
-      <p className="mb-2 text-[11px] font-medium uppercase tracking-widest text-[#6b7280]">
-        Filter Wilayah
-      </p>
+      {showLabel && (
+        <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.12em] mb-1.5">
+          Filter Wilayah
+        </p>
+      )}
 
       {/* Unified pill bar */}
       <div className="flex items-center rounded-2xl border border-[#e5e7eb] bg-white p-1.5">
