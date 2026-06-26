@@ -326,8 +326,10 @@ export default function DashboardKejadianPage() {
 
   const sdmWorkloadData = useMemo(() => {
     if (!data?.markers) return [];
+    const markers = filteredMarkers;
     
-    return data.markers.map(m => {
+    // 1. Calculate workload components for each marker
+    const markersWithStaff = markers.map(m => {
       const shortName = m.jenis_bencana.replace('Puskesmas ', '');
       
       let basePop = 24000;
@@ -341,16 +343,51 @@ export default function DashboardKejadianPage() {
       else if (m.karakteristik === 'Sangat Terpencil') standardStaff = 8;
       
       const actualStaff = Math.max(2, Math.round(standardStaff * (m.nakes_pct / 100)));
-      const ratioVal = Math.round(basePop / actualStaff);
       
       return {
-        name: shortName,
-        nakes_pct: m.nakes_pct,
-        beban: ratioVal,
-        kategori: m.karakteristik,
+        ...m,
+        shortName,
+        basePop,
+        actualStaff
       };
     });
-  }, [data]);
+
+    // 2. Aggregate based on active scope
+    if (cakupan === 'nasional') {
+      const groups = new Map<string, { pop: number; staff: number }>();
+      markersWithStaff.forEach(m => {
+        const key = m.provinsi.toUpperCase();
+        const existing = groups.get(key) || { pop: 0, staff: 0 };
+        existing.pop += m.basePop;
+        existing.staff += m.actualStaff;
+        groups.set(key, existing);
+      });
+
+      return Array.from(groups.entries()).map(([provName, stats]) => ({
+        name: provName,
+        beban: Math.round(stats.pop / stats.staff),
+      }));
+    } else if (cakupan === 'provinsi') {
+      const groups = new Map<string, { pop: number; staff: number }>();
+      markersWithStaff.forEach(m => {
+        const key = m.kabupaten.toUpperCase();
+        const existing = groups.get(key) || { pop: 0, staff: 0 };
+        existing.pop += m.basePop;
+        existing.staff += m.actualStaff;
+        groups.set(key, existing);
+      });
+
+      return Array.from(groups.entries()).map(([kabName, stats]) => ({
+        name: kabName,
+        beban: Math.round(stats.pop / stats.staff),
+      }));
+    } else {
+      return markersWithStaff.map(m => ({
+        name: m.shortName,
+        beban: Math.round(m.basePop / m.actualStaff),
+      }));
+    }
+  }, [data, filteredMarkers, cakupan]);
 
   const kategoriPerformanceData = useMemo(() => {
     if (!data?.markers) return [];
@@ -1509,10 +1546,18 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
         >
           <div className="mb-4">
             <h3 className="text-lg sm:text-[22px] font-black text-slate-900 uppercase tracking-wide leading-tight">
-              Beban Kerja SDM per Puskesmas
+              {cakupan === 'nasional'
+                ? 'Beban Kerja SDM per Provinsi'
+                : cakupan === 'provinsi'
+                  ? 'Beban Kerja SDM per Kab/Kota'
+                  : 'Beban Kerja SDM per Puskesmas'}
             </h3>
             <p className="text-sm sm:text-[15px] font-medium text-slate-500 mt-1.5 leading-relaxed">
-              Rasio beban kerja (penduduk / nakes aktual) tiap Puskesmas. Titik merah = rasio tinggi.
+              {cakupan === 'nasional'
+                ? 'Rasio beban kerja (penduduk / nakes aktual) rata-rata tiap Provinsi.'
+                : cakupan === 'provinsi'
+                  ? 'Rasio beban kerja (penduduk / nakes aktual) rata-rata tiap Kabupaten/Kota.'
+                  : 'Rasio beban kerja (penduduk / nakes aktual) tiap Puskesmas. Titik merah = rasio tinggi.'}
             </p>
           </div>
           <div className="flex-1 min-h-[300px]">
