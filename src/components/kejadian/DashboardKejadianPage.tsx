@@ -354,17 +354,36 @@ export default function DashboardKejadianPage() {
 
   const kategoriPerformanceData = useMemo(() => {
     if (!data?.markers) return [];
-    const markers = data.markers;
+    const markers = filteredMarkers;
     
-    const categories = [
-      { name: 'Rawat Inap', filter: (m: typeof markers[0]) => m.is_ranap },
-      { name: 'Non Rawat Inap', filter: (m: typeof markers[0]) => !m.is_ranap },
-      { name: 'Biasa', filter: (m: typeof markers[0]) => m.karakteristik === 'Biasa' },
-      { name: 'Terpencil', filter: (m: typeof markers[0]) => m.karakteristik === 'Terpencil' },
-      { name: 'Sangat Terpencil', filter: (m: typeof markers[0]) => m.karakteristik === 'Sangat Terpencil' },
+    const allCategories = [
+      { id: 'ranap', name: 'Ranap', filter: (m: typeof data.markers[0]) => m.is_ranap },
+      { id: 'non-ranap', name: 'Non-Ranap', filter: (m: typeof data.markers[0]) => !m.is_ranap },
+      { id: 'biasa', name: 'Perkotaan', filter: (m: typeof data.markers[0]) => m.karakteristik === 'Biasa' },
+      { id: 'terpencil', name: 'Terpencil (T)', filter: (m: typeof data.markers[0]) => m.karakteristik === 'Terpencil' },
+      { id: 'sangat-terpencil', name: 'Sangat Terpencil (ST)', filter: (m: typeof data.markers[0]) => m.karakteristik === 'Sangat Terpencil' },
     ];
-    
-    return categories.map(cat => {
+
+    const activeCategories = allCategories.filter((cat) => {
+      // 1. Kategori Layanan filter check
+      if (selectedKategori === 'ranap' && cat.id === 'non-ranap') return false;
+      if (selectedKategori === 'non-ranap' && cat.id === 'ranap') return false;
+
+      // 2. Karakteristik Wilayah filter check
+      if (selectedKarakteristik.length > 0) {
+        const hasBiasa = selectedKarakteristik.includes('Perkotaan');
+        const hasTerpencil = selectedKarakteristik.includes('Terpencil (T)') || selectedKarakteristik.includes('Pedesaan');
+        const hasSangatTerpencil = selectedKarakteristik.includes('Sangat Terpencil (ST)') || selectedKarakteristik.includes('Pedesaan');
+
+        if (cat.id === 'biasa' && !hasBiasa) return false;
+        if (cat.id === 'terpencil' && !hasTerpencil) return false;
+        if (cat.id === 'sangat-terpencil' && !hasSangatTerpencil) return false;
+      }
+
+      return true;
+    });
+
+    return activeCategories.map(cat => {
       const items = markers.filter(cat.filter);
       const count = items.length;
       
@@ -393,7 +412,7 @@ export default function DashboardKejadianPage() {
         'Ketersediaan Obat': avgObat,
       };
     });
-  }, [data]);
+  }, [data, filteredMarkers, selectedKategori, selectedKarakteristik]);
 
   const kecamatanList = useMemo(() => {
     if (!data) return []
