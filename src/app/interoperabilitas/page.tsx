@@ -146,7 +146,7 @@ export default function InteroperabilityPage() {
 
         {/* Navigation Breadcrumb & Action Row */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/60 pb-5 gap-4">
-          <nav className="flex text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-400 gap-2 items-center">
+          <nav className="flex text-sm sm:text-base font-bold uppercase tracking-wider text-slate-400 gap-2 items-center">
             <Link href="/" className="hover:text-[#047D78] transition-colors">BERANDA</Link>
             <span className="text-slate-300">/</span>
             <span className="text-[#047D78]">INTEROPERABILITAS DATA</span>
@@ -155,7 +155,7 @@ export default function InteroperabilityPage() {
           <button
             onClick={triggerSyncAll}
             disabled={syncingAll}
-            className="flex items-center justify-center gap-2.5 rounded-xl bg-[#047D78] hover:bg-[#036662] text-white px-5 py-3 text-xs font-black uppercase tracking-wider transition-all hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-75 disabled:cursor-wait shrink-0"
+            className="flex items-center justify-center gap-2.5 rounded-xl bg-[#047D78] hover:bg-[#036662] text-white px-6 py-3.5 text-sm font-black uppercase tracking-wider transition-all hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-75 disabled:cursor-wait shrink-0"
           >
             <RefreshCw className={`h-4 w-4 ${syncingAll ? 'animate-spin' : ''}`} />
             <span>{syncingAll ? 'Sinkronisasi Semua...' : 'Sinkronkan Semua Sistem'}</span>
@@ -177,17 +177,17 @@ export default function InteroperabilityPage() {
 
         {/* Systems Matrix Table */}
         <div className="space-y-4">
-          <h2 className="text-lg font-black text-slate-800 uppercase tracking-wider">Matriks Integrasi Sistem Vertikal</h2>
+          <h2 className="text-xl font-black text-slate-800 uppercase tracking-wider">Matriks Integrasi Sistem Vertikal</h2>
           <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-sm overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse min-w-[1000px]">
+            <table className="w-full text-left text-sm border-collapse min-w-[1000px]">
               <thead>
-                <tr className="border-b border-slate-200 text-slate-450 font-bold uppercase tracking-wider text-[10px] bg-slate-50/50">
-                  <th className="py-3 px-4 rounded-l-xl">Sistem Vertikal (Kemenkes)</th>
-                  <th className="py-3 px-4 w-[35%]">Variabel Monitoring Terkait</th>
-                  <th className="py-3 px-4">Mekanisme Aliran Data</th>
-                  <th className="py-3 px-4">Jadwal Sinkronisasi</th>
-                  <th className="py-3 px-4 text-center">Status & Sinkronisasi Terakhir</th>
-                  <th className="py-3 px-4 text-center rounded-r-xl">Aksi</th>
+                <tr className="border-b border-slate-200 text-slate-450 font-bold uppercase tracking-wider text-[11.5px] bg-slate-50/50">
+                  <th className="py-3.5 px-4 rounded-l-xl">Sistem Vertikal (Kemenkes)</th>
+                  <th className="py-3.5 px-4 w-[35%]">Variabel Monitoring Terkait</th>
+                  <th className="py-3.5 px-4">Mekanisme Aliran Data</th>
+                  <th className="py-3.5 px-4">Jadwal Sinkronisasi</th>
+                  <th className="py-3.5 px-4 text-center">Status & Sinkronisasi Terakhir</th>
+                  <th className="py-3.5 px-4 text-center rounded-r-xl">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-bold text-slate-750">
@@ -196,65 +196,65 @@ export default function InteroperabilityPage() {
                   return (
                     <tr key={sys.id} className="hover:bg-slate-50/40 transition-colors">
                       {/* Name & Full Name */}
-                      <td className="py-4.5 px-4">
+                      <td className="py-5 px-4">
                         <div className="flex items-center gap-2">
                           <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${sys.color === 'teal' ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
-                          <span className="text-sm font-black text-slate-900">{sys.name}</span>
+                          <span className="text-base font-black text-slate-900">{sys.name}</span>
                         </div>
-                        <p className="text-[10px] text-slate-450 font-semibold mt-0.5 max-w-[220px] leading-relaxed">{sys.fullname}</p>
+                        <p className="text-xs text-slate-450 font-semibold mt-1 max-w-[220px] leading-relaxed">{sys.fullname}</p>
                       </td>
 
                       {/* Variables */}
-                      <td className="py-4.5 px-4 text-xs font-semibold text-slate-700 leading-relaxed">
+                      <td className="py-5 px-4 text-sm font-semibold text-slate-700 leading-relaxed">
                         {sys.variables}
                       </td>
 
                       {/* Mechanism */}
-                      <td className="py-4.5 px-4">
+                      <td className="py-5 px-4">
                         <span className="text-slate-800 font-bold flex items-center gap-1.5">
                           {sys.type === 'API Integrasi' ? (
-                            <Server className="h-3.5 w-3.5 text-teal-600 shrink-0" />
+                            <Server className="h-4 w-4 text-teal-600 shrink-0" />
                           ) : (
-                            <FileSpreadsheet className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                            <FileSpreadsheet className="h-4 w-4 text-amber-600 shrink-0" />
                           )}
-                          <span className="text-[11px]">{sys.type}</span>
+                          <span className="text-sm">{sys.type}</span>
                         </span>
-                        <span className="text-[10px] text-slate-450 font-medium block mt-0.5">{sys.method}</span>
+                        <span className="text-xs text-slate-450 font-medium block mt-0.5">{sys.method}</span>
                       </td>
 
                       {/* Schedule */}
-                      <td className="py-4.5 px-4 font-semibold text-slate-655">
+                      <td className="py-5 px-4 font-semibold text-slate-700">
                         <span className="flex items-center gap-1.5">
-                          <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                          <Clock className="h-4 w-4 text-slate-400 shrink-0" />
                           {sys.schedule}
                         </span>
                       </td>
 
                       {/* Status & Last Sync */}
-                      <td className="py-4.5 px-4 text-center">
+                      <td className="py-5 px-4 text-center">
                         <div className="flex flex-col items-center gap-1">
-                          <span className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${sys.color === 'teal'
+                          <span className={`inline-flex items-center rounded-lg border px-2.5 py-0.5 text-[10.5px] font-black uppercase tracking-wider ${sys.color === 'teal'
                             ? 'bg-emerald-55 text-emerald-700 border-emerald-150'
                             : 'bg-amber-55 text-amber-700 border-amber-150 animate-pulse'
                             }`}>
                             {sys.status}
                           </span>
-                          <span className="text-[10px] text-slate-600 block mt-0.5">{sys.lastSync}</span>
-                          <span className="text-[9px] text-slate-400 italic font-medium block">{sys.recordCount}</span>
+                          <span className="text-xs sm:text-sm text-slate-600 block mt-1">{sys.lastSync}</span>
+                          <span className="text-xs text-slate-400 italic font-medium block">{sys.recordCount}</span>
                         </div>
                       </td>
 
                       {/* Action */}
-                      <td className="py-4.5 px-4 text-center">
+                      <td className="py-5 px-4 text-center">
                         <button
                           onClick={() => triggerSync(sys.id)}
                           disabled={status === 'syncing' || syncingAll}
-                          className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-[10.5px] font-black uppercase tracking-wider transition-all hover:-translate-y-0.5 active:scale-[0.98] ${status === 'success'
+                          className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-xs sm:text-sm font-black uppercase tracking-wider transition-all hover:-translate-y-0.5 active:scale-[0.98] ${status === 'success'
                             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                             : 'bg-slate-50 border border-slate-200 text-slate-700 hover:bg-teal-50 hover:text-[#047D78] hover:border-teal-200'
                             }`}
                         >
-                          <RefreshCw className={`h-3 w-3 ${status === 'syncing' ? 'animate-spin text-teal-650' : ''}`} />
+                          <RefreshCw className={`h-3.5 w-3.5 ${status === 'syncing' ? 'animate-spin text-teal-650' : ''}`} />
                           <span>
                             {status === 'idle' && 'Sync'}
                             {status === 'syncing' && 'Syncing'}
@@ -272,33 +272,33 @@ export default function InteroperabilityPage() {
 
         {/* Sync logs and History */}
         <div className="space-y-4 pt-4">
-          <h2 className="text-lg font-black text-slate-800 uppercase tracking-wider">Riwayat Aktivitas Aliran Data</h2>
+          <h2 className="text-xl font-black text-slate-800 uppercase tracking-wider">Riwayat Aktivitas Aliran Data</h2>
           <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-sm overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse min-w-[700px]">
+            <table className="w-full text-left text-sm border-collapse min-w-[700px]">
               <thead>
-                <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                  <th className="pb-3 px-3">Tanggal / Waktu</th>
-                  <th className="pb-3 px-3">Sistem Vertikal</th>
-                  <th className="pb-3 px-3">Metode Aksi</th>
-                  <th className="pb-3 px-3 text-center">Status</th>
-                  <th className="pb-3 px-3 text-center">Jumlah Data</th>
-                  <th className="pb-3 px-3 text-center">Durasi Proses</th>
+                <tr className="border-b border-slate-200 text-slate-450 font-bold uppercase tracking-wider text-[11.5px] bg-slate-50/50">
+                  <th className="py-3 px-4 rounded-l-xl">Tanggal / Waktu</th>
+                  <th className="py-3 px-4">Sistem Vertikal</th>
+                  <th className="py-3 px-4">Metode Aksi</th>
+                  <th className="py-3 px-4 text-center">Status</th>
+                  <th className="py-3 px-4 text-center">Jumlah Data</th>
+                  <th className="py-3 px-4 text-center rounded-r-xl">Durasi Proses</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-bold text-slate-700">
                 {syncLogs.map((log, idx) => (
                   <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-3 px-3 text-slate-500 font-mono">{log.time}</td>
-                    <td className="py-3 px-3 text-slate-900">{log.system}</td>
-                    <td className="py-3 px-3 text-slate-650">{log.action}</td>
-                    <td className="py-3 px-3 text-center">
-                      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-55 border border-emerald-100 px-2 py-0.5 text-[10px] text-emerald-700 font-extrabold uppercase">
-                        <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-600" />
+                    <td className="py-3.5 px-4 text-slate-500 font-mono">{log.time}</td>
+                    <td className="py-3.5 px-4 text-slate-900">{log.system}</td>
+                    <td className="py-3.5 px-4 text-slate-650">{log.action}</td>
+                    <td className="py-3.5 px-4 text-center">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-55 border border-emerald-100 px-2 py-0.5 text-xs text-emerald-700 font-extrabold uppercase">
+                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
                         {log.status}
                       </span>
                     </td>
-                    <td className="py-3 px-3 text-center text-slate-800">{log.records}</td>
-                    <td className="py-3 px-3 text-center text-slate-500 font-mono">{log.duration}</td>
+                    <td className="py-3.5 px-4 text-center text-slate-800">{log.records}</td>
+                    <td className="py-3.5 px-4 text-center text-slate-500 font-mono">{log.duration}</td>
                   </tr>
                 ))}
               </tbody>

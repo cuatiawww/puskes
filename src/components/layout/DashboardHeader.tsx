@@ -39,6 +39,7 @@ const sidebarMenu = [
     title: 'Menu Utama',
     items: [
       { label: 'Dashboard', href: '/', icon: Home },
+      { label: 'Profil Saya', href: '/profile', icon: UserCircle },
     ],
   },
   {
@@ -162,8 +163,8 @@ export function DashboardSidebar({ open, onClose }: DashboardSidebarProps) {
                         else onClose()
                       }}
                       className={`flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold uppercase tracking-[0.03em] transition ${active
-                          ? 'bg-teal-50 text-teal-700 font-extrabold shadow-[inset_0_0_0_1px_rgba(20,184,166,0.22)]'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        ? 'bg-teal-50 text-teal-700 font-extrabold shadow-[inset_0_0_0_1px_rgba(20,184,166,0.22)]'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                         }`}
                     >
                       <Icon className="h-4 w-4" />
@@ -289,7 +290,7 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
                   {pathname === '/' || pathname === '/dashboard-kejadian'
                     ? `Asistensi penilaian kualitas pelayanan kesehatan primer dan evaluasi capaian indikator kinerja Puskesmas secara real-time di wilayah ${activeRegion}.`
                     : pathname === '/interoperabilitas'
-                      ? 'Monitor aliran data integrasi SatuSehat dan status sinkronisasi sistem Kemenkes RI (Sesuai PMK Rencana Strategis).'
+                      ? 'Monitor aliran data integrasi SatuSehat dan status sinkronisasi sistem Kemenkes RI '
                       : pathname === '/settings'
                         ? 'Kelola informasi profil, detail akun, dan kata sandi keamanan Anda.'
                         : 'Pantau perkembangan fasilitas kesehatan di seluruh Indonesia secara real-time.'}
@@ -441,10 +442,14 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
                       <p className="mt-0.5 text-xs text-slate-600">{accessLabel}</p>
                     </div>
                     <div className="mt-3 space-y-2">
-                      <button type="button" className="flex w-full items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-left text-[13px] font-bold uppercase tracking-[0.03em] text-slate-700 transition hover:bg-slate-50">
+                      <Link
+                        href="/profile"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex w-full items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-left text-[13px] font-bold uppercase tracking-[0.03em] text-slate-700 transition hover:bg-slate-50"
+                      >
                         <UserCircle className="h-4 w-4 text-teal-600" />
                         Profil Saya
-                      </button>
+                      </Link>
                       <Link
                         href="/settings"
                         onClick={() => setProfileOpen(false)}

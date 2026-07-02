@@ -215,7 +215,7 @@ export default function SettingsPage() {
 
         {/* Navigation Breadcrumb */}
         <div className="border-b border-slate-200/60 pb-5">
-          <nav className="flex text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-400 gap-2 items-center">
+          <nav className="flex text-sm sm:text-base font-bold uppercase tracking-wider text-slate-400 gap-2 items-center">
             <Link href="/" className="hover:text-[#047D78] transition-colors">BERANDA</Link>
             <span className="text-slate-300">/</span>
             <span className="text-[#047D78]">PENGATURAN AKUN</span>
@@ -224,30 +224,29 @@ export default function SettingsPage() {
 
         {/* Page Title & Profile Badge */}
 
-
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 items-start">
           {/* Sidebar Tabs */}
           <div className="flex flex-col gap-3">
             <button
               onClick={() => { setActiveTab('profile'); setError(''); setSuccess('') }}
-              className={`flex items-center gap-3 rounded-2xl px-5 py-4 text-left text-sm font-black uppercase tracking-wider transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] ${activeTab === 'profile'
+              className={`flex items-center gap-3 rounded-2xl px-5 py-4 text-left text-base sm:text-lg font-black uppercase tracking-wider transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] ${activeTab === 'profile'
                 ? 'bg-teal-750 text-white'
                 : 'bg-white border border-slate-200/80 text-slate-700 hover:bg-teal-50/20 hover:border-teal-200/50 hover:text-[#047D78]'
                 }`}
               style={{ backgroundColor: activeTab === 'profile' ? '#047D78' : undefined }}
             >
-              <User className="h-4.5 w-4.5 shrink-0" />
+              <User className="h-5 w-5 shrink-0" />
               <span>Profil Akun</span>
             </button>
             <button
               onClick={() => { setActiveTab('password'); setError(''); setSuccess('') }}
-              className={`flex items-center gap-3 rounded-2xl px-5 py-4 text-left text-sm font-black uppercase tracking-wider transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] ${activeTab === 'password'
+              className={`flex items-center gap-3 rounded-2xl px-5 py-4 text-left text-base sm:text-lg font-black uppercase tracking-wider transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] ${activeTab === 'password'
                 ? 'bg-teal-750 text-white'
                 : 'bg-white border border-slate-200/80 text-slate-700 hover:bg-teal-50/20 hover:border-teal-200/50 hover:text-[#047D78]'
                 }`}
               style={{ backgroundColor: activeTab === 'password' ? '#047D78' : undefined }}
             >
-              <LockKeyhole className="h-4.5 w-4.5 shrink-0" />
+              <LockKeyhole className="h-5 w-5 shrink-0" />
               <span>Keamanan Sandi</span>
             </button>
           </div>
@@ -257,14 +256,14 @@ export default function SettingsPage() {
 
             {/* Alert message displays */}
             {error && (
-              <div className="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50/60 px-5 py-4 text-xs sm:text-sm font-bold text-red-700 shadow-sm animate-shake">
-                <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-650" />
+              <div className="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50/60 px-5 py-4 text-sm sm:text-base font-bold text-red-700 shadow-sm animate-shake">
+                <AlertCircle className="mt-0.5 h-5.5 w-5.5 flex-shrink-0 text-red-650" />
                 <span className="leading-relaxed">{error}</span>
               </div>
             )}
             {success && (
-              <div className="mb-6 flex items-start gap-3 rounded-2xl border border-emerald-250 bg-emerald-50/60 px-5 py-4 text-xs sm:text-sm font-bold text-emerald-800 shadow-sm animate-pulse">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600" />
+              <div className="mb-6 flex items-start gap-3 rounded-2xl border border-emerald-250 bg-emerald-50/60 px-5 py-4 text-sm sm:text-base font-bold text-emerald-800 shadow-sm animate-pulse">
+                <CheckCircle2 className="mt-0.5 h-5.5 w-5.5 flex-shrink-0 text-emerald-600" />
                 <span className="leading-relaxed">{success}</span>
               </div>
             )}
@@ -273,15 +272,15 @@ export default function SettingsPage() {
             {activeTab === 'profile' && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-xl font-black text-slate-900 uppercase tracking-wide">Ubah Informasi Profil</h2>
-                  <p className="text-sm text-slate-500 font-semibold mt-1">Perbarui detail biodata diri dan informasi kontak aktif Anda.</p>
+                  <h2 className="text-2xl font-black text-slate-900 uppercase tracking-wide">Ubah Informasi Profil</h2>
+                  <p className="text-base text-slate-500 font-semibold mt-1">Perbarui detail biodata diri dan informasi kontak aktif Anda.</p>
                 </div>
 
                 <form onSubmit={handleUpdateProfile} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Username */}
                     <div className="space-y-2">
-                      <label className="block text-xs sm:text-sm font-black text-slate-500 uppercase tracking-wider">Username</label>
+                      <label className="block text-sm sm:text-base font-black text-slate-500 uppercase tracking-wider">Username</label>
                       <div className="flex h-12 items-center gap-3.5 rounded-xl border border-slate-200 bg-slate-50/50 px-4 transition-all duration-200 focus-within:border-teal-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-teal-100">
                         <UserRound className="h-[20px] w-[20px] text-slate-400 shrink-0" />
                         <input
@@ -290,14 +289,14 @@ export default function SettingsPage() {
                           onChange={(e) => setUsername(e.target.value)}
                           required
                           placeholder="Username akun Anda"
-                          className="h-full min-w-0 flex-1 bg-transparent text-sm sm:text-base font-bold text-slate-800 outline-none placeholder:text-slate-400 placeholder:font-medium"
+                          className="h-full min-w-0 flex-1 bg-transparent text-base sm:text-lg font-bold text-slate-800 outline-none placeholder:text-slate-400 placeholder:font-medium"
                         />
                       </div>
                     </div>
 
                     {/* Full Name */}
                     <div className="space-y-2">
-                      <label className="block text-xs sm:text-sm font-black text-slate-500 uppercase tracking-wider">Nama Lengkap</label>
+                      <label className="block text-sm sm:text-base font-black text-slate-500 uppercase tracking-wider">Nama Lengkap</label>
                       <div className="flex h-12 items-center gap-3.5 rounded-xl border border-slate-200 bg-slate-50/50 px-4 transition-all duration-200 focus-within:border-teal-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-teal-100">
                         <User className="h-[20px] w-[20px] text-slate-400 shrink-0" />
                         <input
@@ -306,14 +305,14 @@ export default function SettingsPage() {
                           onChange={(e) => setNamaLengkap(e.target.value)}
                           required
                           placeholder="Nama Lengkap Anda"
-                          className="h-full min-w-0 flex-1 bg-transparent text-sm sm:text-base font-bold text-slate-800 outline-none placeholder:text-slate-400 placeholder:font-medium"
+                          className="h-full min-w-0 flex-1 bg-transparent text-base sm:text-lg font-bold text-slate-800 outline-none placeholder:text-slate-400 placeholder:font-medium"
                         />
                       </div>
                     </div>
 
                     {/* Email */}
                     <div className="space-y-2">
-                      <label className="block text-xs sm:text-sm font-black text-slate-500 uppercase tracking-wider">Alamat Email</label>
+                      <label className="block text-sm sm:text-base font-black text-slate-500 uppercase tracking-wider">Alamat Email</label>
                       <div className="flex h-12 items-center gap-3.5 rounded-xl border border-slate-200 bg-slate-50/50 px-4 transition-all duration-200 focus-within:border-teal-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-teal-100">
                         <Mail className="h-[20px] w-[20px] text-slate-400 shrink-0" />
                         <input
@@ -322,14 +321,14 @@ export default function SettingsPage() {
                           onChange={(e) => setEmail(e.target.value)}
                           required
                           placeholder="nama@domain.com"
-                          className="h-full min-w-0 flex-1 bg-transparent text-sm sm:text-base font-bold text-slate-800 outline-none placeholder:text-slate-400 placeholder:font-medium"
+                          className="h-full min-w-0 flex-1 bg-transparent text-base sm:text-lg font-bold text-slate-800 outline-none placeholder:text-slate-400 placeholder:font-medium"
                         />
                       </div>
                     </div>
 
                     {/* Phone Number */}
                     <div className="space-y-2">
-                      <label className="block text-xs sm:text-sm font-black text-slate-500 uppercase tracking-wider">No. Telepon / WA</label>
+                      <label className="block text-sm sm:text-base font-black text-slate-500 uppercase tracking-wider">No. Telepon / WA</label>
                       <div className="flex h-12 items-center gap-3.5 rounded-xl border border-slate-200 bg-slate-50/50 px-4 transition-all duration-200 focus-within:border-teal-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-teal-100">
                         <Phone className="h-[20px] w-[20px] text-slate-400 shrink-0" />
                         <input
@@ -337,7 +336,7 @@ export default function SettingsPage() {
                           value={noTelpon}
                           onChange={(e) => setNoTelpon(e.target.value)}
                           placeholder="Contoh: 08123456789"
-                          className="h-full min-w-0 flex-1 bg-transparent text-sm sm:text-base font-bold text-slate-800 outline-none placeholder:text-slate-400 placeholder:font-medium"
+                          className="h-full min-w-0 flex-1 bg-transparent text-base sm:text-lg font-bold text-slate-800 outline-none placeholder:text-slate-400 placeholder:font-medium"
                         />
                       </div>
                     </div>
@@ -346,36 +345,36 @@ export default function SettingsPage() {
                   {/* Read-Only Account & Access Metadata (Visible to all users) */}
                   <div className="mt-8 pt-6 border-t border-slate-100 space-y-4">
                     <div>
-                      <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Informasi Akun & Hak Akses</h3>
-                      <p className="text-xs text-slate-500 font-semibold mt-0.5">Detail tingkat kewenangan dan wilayah kerja penugasan Anda.</p>
+                      <h3 className="text-base font-black text-slate-800 uppercase tracking-wider">Informasi Akun & Hak Akses</h3>
+                      <p className="text-sm text-slate-500 font-semibold mt-0.5">Detail tingkat kewenangan dan wilayah kerja penugasan Anda.</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-slate-50/40 border border-slate-100/80 rounded-2xl p-5 shadow-sm">
                       {/* Level User */}
                       <div className="space-y-1">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Level Pengguna</span>
-                        <p className="text-sm font-bold text-teal-800 uppercase tracking-wide">{user?.level_name || 'User'}</p>
+                        <span className="text-xs sm:text-sm font-black text-slate-400 uppercase tracking-wider">Level Pengguna</span>
+                        <p className="text-base sm:text-lg font-bold text-teal-800 uppercase tracking-wide">{user?.level_name || 'User'}</p>
                       </div>
 
                       {/* Cakupan Wilayah */}
                       <div className="space-y-1">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Cakupan Wilayah Kerja</span>
-                        <p className="text-sm font-bold text-slate-700">{user?.wilayah_scope?.access_label || 'Nasional'}</p>
+                        <span className="text-xs sm:text-sm font-black text-slate-400 uppercase tracking-wider">Cakupan Wilayah Kerja</span>
+                        <p className="text-base sm:text-lg font-bold text-slate-700">{user?.wilayah_scope?.access_label || 'Nasional'}</p>
                       </div>
 
                       {/* Detail Provinsi Kerja (jika bukan nasional) */}
                       {user?.wilayah_scope?.provinsi?.id && (
                         <div className="space-y-1">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Provinsi Penugasan</span>
-                          <p className="text-sm font-bold text-slate-700">{user.wilayah_scope.provinsi.label}</p>
+                          <span className="text-xs sm:text-sm font-black text-slate-400 uppercase tracking-wider">Provinsi Penugasan</span>
+                          <p className="text-base sm:text-lg font-bold text-slate-700">{user.wilayah_scope.provinsi.label}</p>
                         </div>
                       )}
 
                       {/* Detail Kabupaten Kerja (jika ada kabupaten terkunci) */}
                       {user?.wilayah_scope?.kabupaten?.id && (
                         <div className="space-y-1">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Kabupaten / Kota Penugasan</span>
-                          <p className="text-sm font-bold text-slate-700">{user.wilayah_scope.kabupaten.label}</p>
+                          <span className="text-xs sm:text-sm font-black text-slate-400 uppercase tracking-wider">Kabupaten / Kota Penugasan</span>
+                          <p className="text-base sm:text-lg font-bold text-slate-700">{user.wilayah_scope.kabupaten.label}</p>
                         </div>
                       )}
 
@@ -386,26 +385,26 @@ export default function SettingsPage() {
 
                           {/* Kategori Akses */}
                           <div className="space-y-1">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Kategori Akses</span>
-                            <p className="text-sm font-bold text-slate-700 capitalize">{user.registration_details.kategori_akses || '-'}</p>
+                            <span className="text-xs sm:text-sm font-black text-slate-400 uppercase tracking-wider">Kategori Akses</span>
+                            <p className="text-base sm:text-lg font-bold text-slate-700 capitalize">{user.registration_details.kategori_akses || '-'}</p>
                           </div>
 
                           {/* Pekerjaan / Posisi */}
                           <div className="space-y-1">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Pekerjaan / Jabatan</span>
-                            <p className="text-sm font-bold text-slate-700">{user.registration_details.pekerjaan_posisi || '-'}</p>
+                            <span className="text-xs sm:text-sm font-black text-slate-400 uppercase tracking-wider">Pekerjaan / Jabatan</span>
+                            <p className="text-base sm:text-lg font-bold text-slate-700">{user.registration_details.pekerjaan_posisi || '-'}</p>
                           </div>
 
                           {/* Nama Institusi */}
                           <div className="space-y-1">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Nama Institusi</span>
-                            <p className="text-sm font-bold text-slate-700">{user.registration_details.nama_institusi || '-'}</p>
+                            <span className="text-xs sm:text-sm font-black text-slate-400 uppercase tracking-wider">Nama Institusi</span>
+                            <p className="text-base sm:text-lg font-bold text-slate-700">{user.registration_details.nama_institusi || '-'}</p>
                           </div>
 
                           {/* Tujuan Akses */}
                           <div className="space-y-1">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Tujuan Akses</span>
-                            <p className="text-sm font-bold text-slate-700">
+                            <span className="text-xs sm:text-sm font-black text-slate-400 uppercase tracking-wider">Tujuan Akses</span>
+                            <p className="text-base sm:text-lg font-bold text-slate-700">
                               {user.registration_details.tujuan_akses === 'lainnya'
                                 ? user.registration_details.tujuan_akses_lainnya
                                 : user.registration_details.tujuan_akses || '-'
@@ -415,20 +414,20 @@ export default function SettingsPage() {
 
                           {/* Provinsi Pendaftaran */}
                           <div className="space-y-1">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Provinsi Domisili</span>
-                            <p className="text-sm font-bold text-slate-700">{user.registration_details.provinsi_name || '-'}</p>
+                            <span className="text-xs sm:text-sm font-black text-slate-400 uppercase tracking-wider">Provinsi Domisili</span>
+                            <p className="text-base sm:text-lg font-bold text-slate-700">{user.registration_details.provinsi_name || '-'}</p>
                           </div>
 
                           {/* Kabupaten Pendaftaran */}
                           <div className="space-y-1">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Kabupaten / Kota Domisili</span>
-                            <p className="text-sm font-bold text-slate-700">{user.registration_details.kabupaten_name || '-'}</p>
+                            <span className="text-xs sm:text-sm font-black text-slate-400 uppercase tracking-wider">Kabupaten / Kota Domisili</span>
+                            <p className="text-base sm:text-lg font-bold text-slate-700">{user.registration_details.kabupaten_name || '-'}</p>
                           </div>
 
                           {/* Alamat */}
                           <div className="space-y-1 md:col-span-2">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Alamat Lengkap</span>
-                            <p className="text-sm font-bold text-slate-700 leading-relaxed">{user.registration_details.alamat_user || '-'}</p>
+                            <span className="text-xs sm:text-sm font-black text-slate-400 uppercase tracking-wider">Alamat Lengkap</span>
+                            <p className="text-base sm:text-lg font-bold text-slate-700 leading-relaxed">{user.registration_details.alamat_user || '-'}</p>
                           </div>
                         </>
                       )}
@@ -439,7 +438,7 @@ export default function SettingsPage() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 px-8 text-sm font-black uppercase tracking-wider text-white transition-all hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-75 disabled:cursor-wait"
+                      className="inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 px-8 text-base font-black uppercase tracking-wider text-white transition-all hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-75 disabled:cursor-wait"
                       style={{ backgroundColor: '#047D78' }}
                     >
                       {loading ? (
@@ -458,19 +457,19 @@ export default function SettingsPage() {
             {activeTab === 'password' && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-xl font-black text-slate-900 uppercase tracking-wide">Ubah Kata Sandi</h2>
-                  <p className="text-sm text-slate-500 font-semibold mt-1">Perbarui kata sandi untuk menjaga keamanan akun Anda.</p>
+                  <h2 className="text-2xl font-black text-slate-900 uppercase tracking-wide">Ubah Kata Sandi</h2>
+                  <p className="text-base text-slate-500 font-semibold mt-1">Perbarui kata sandi untuk menjaga keamanan akun Anda.</p>
                 </div>
 
-                <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 px-5 py-4 text-xs sm:text-sm font-bold text-amber-900 shadow-sm leading-relaxed">
-                  <ShieldAlert className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 animate-bounce" />
+                <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 px-5 py-4 text-sm sm:text-base font-bold text-amber-900 shadow-sm leading-relaxed">
+                  <ShieldAlert className="mt-0.5 h-6 w-6 flex-shrink-0 text-amber-600 animate-bounce" />
                   <span>Setelah berhasil mengganti password, Anda akan otomatis keluar secara aman dan harus login kembali dengan kata sandi baru.</span>
                 </div>
 
                 <form onSubmit={handleChangePassword} className="space-y-6">
                   {/* Old Password */}
                   <div className="space-y-2">
-                    <label className="block text-xs sm:text-sm font-black text-slate-500 uppercase tracking-wider">Kata Sandi Lama</label>
+                    <label className="block text-sm sm:text-base font-black text-slate-500 uppercase tracking-wider">Kata Sandi Lama</label>
                     <div className="flex h-12 items-center gap-3.5 rounded-xl border border-slate-200 bg-slate-50/50 px-4 transition-all duration-200 focus-within:border-teal-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-teal-100">
                       <LockKeyhole className="h-[20px] w-[20px] text-slate-400 shrink-0" />
                       <input
@@ -479,7 +478,7 @@ export default function SettingsPage() {
                         onChange={(e) => setOldPassword(e.target.value)}
                         required
                         placeholder="Masukkan kata sandi saat ini"
-                        className="h-full min-w-0 flex-1 bg-transparent text-sm sm:text-base font-bold text-slate-800 outline-none placeholder:text-slate-400 placeholder:font-medium"
+                        className="h-full min-w-0 flex-1 bg-transparent text-base sm:text-lg font-bold text-slate-800 outline-none placeholder:text-slate-400 placeholder:font-medium"
                       />
                     </div>
                   </div>
@@ -487,7 +486,7 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* New Password */}
                     <div className="space-y-2">
-                      <label className="block text-xs sm:text-sm font-black text-slate-500 uppercase tracking-wider">Kata Sandi Baru</label>
+                      <label className="block text-sm sm:text-base font-black text-slate-500 uppercase tracking-wider">Kata Sandi Baru</label>
                       <div className="flex h-12 items-center gap-3.5 rounded-xl border border-slate-200 bg-slate-50/50 px-4 transition-all duration-200 focus-within:border-teal-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-teal-100">
                         <KeyRound className="h-[20px] w-[20px] text-slate-400 shrink-0" />
                         <input
@@ -496,24 +495,24 @@ export default function SettingsPage() {
                           onChange={(e) => setNewPassword(e.target.value)}
                           required
                           placeholder="Minimal 8 karakter"
-                          className="h-full min-w-0 flex-1 bg-transparent text-sm sm:text-base font-bold text-slate-800 outline-none placeholder:text-slate-400 placeholder:font-medium"
+                          className="h-full min-w-0 flex-1 bg-transparent text-base sm:text-lg font-bold text-slate-800 outline-none placeholder:text-slate-400 placeholder:font-medium"
                         />
                       </div>
 
                       {/* Realtime dynamic warning in 1 row */}
                       {newPassword.length > 0 && (
-                        <div className="mt-2.5 text-xs font-bold leading-normal">
+                        <div className="mt-2.5 text-sm font-bold leading-normal">
                           {missingChecks.length > 0 ? (
                             <div className="flex flex-wrap items-center gap-1.5 text-red-650 bg-red-50/40 border border-red-100/50 rounded-xl px-3 py-2">
-                              <X className="h-4 w-4 shrink-0 text-red-500 stroke-[3]" />
+                              <X className="h-4.5 w-4.5 shrink-0 text-red-500 stroke-[3]" />
                               <span>Sandi kurang:</span>
-                              <span className="font-black text-[10.5px] uppercase tracking-wider text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-100">
+                              <span className="font-black text-xs uppercase tracking-wider text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-100">
                                 {missingChecks.join(', ')}
                               </span>
                             </div>
                           ) : (
                             <div className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50/40 border border-emerald-100/50 rounded-xl px-3 py-2">
-                              <Check className="h-4 w-4 shrink-0 text-emerald-600 stroke-[3]" />
+                              <Check className="h-4.5 w-4.5 shrink-0 text-emerald-600 stroke-[3]" />
                               <span>Kriteria keamanan kata sandi terpenuhi</span>
                             </div>
                           )}
@@ -523,7 +522,7 @@ export default function SettingsPage() {
 
                     {/* Confirm Password */}
                     <div className="space-y-2">
-                      <label className="block text-xs sm:text-sm font-black text-slate-500 uppercase tracking-wider">Konfirmasi Sandi Baru</label>
+                      <label className="block text-sm sm:text-base font-black text-slate-500 uppercase tracking-wider">Konfirmasi Sandi Baru</label>
                       <div className="flex h-12 items-center gap-3.5 rounded-xl border border-slate-200 bg-slate-50/50 px-4 transition-all duration-200 focus-within:border-teal-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-teal-100">
                         <KeyRound className="h-[20px] w-[20px] text-slate-400 shrink-0" />
                         <input
@@ -532,7 +531,7 @@ export default function SettingsPage() {
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           required
                           placeholder="Ulangi kata sandi baru"
-                          className="h-full min-w-0 flex-1 bg-transparent text-sm sm:text-base font-bold text-slate-800 outline-none placeholder:text-slate-400 placeholder:font-medium"
+                          className="h-full min-w-0 flex-1 bg-transparent text-base sm:text-lg font-bold text-slate-800 outline-none placeholder:text-slate-400 placeholder:font-medium"
                         />
                       </div>
                     </div>
@@ -542,7 +541,7 @@ export default function SettingsPage() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 px-8 text-sm font-black uppercase tracking-wider text-white transition-all hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-75 disabled:cursor-wait"
+                      className="inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 px-8 text-base font-black uppercase tracking-wider text-white transition-all hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-75 disabled:cursor-wait"
                       style={{ backgroundColor: '#047D78' }}
                     >
                       {loading ? (
