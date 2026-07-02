@@ -44,7 +44,7 @@ const sidebarMenu = [
     title: 'Pengelolaan',
     items: [
       { label: 'Verifikasi Data', href: '#', icon: ShieldCheck },
-      { label: 'Pengaturan', href: '#', icon: Settings },
+      { label: 'Pengaturan', href: '/settings', icon: Settings },
     ],
   },
 ]
@@ -439,10 +439,14 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
                           <UserCircle className="h-4 w-4 text-teal-600" />
                           Profil Saya
                         </button>
-                        <button type="button" className="flex w-full items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-left text-[13px] font-bold uppercase tracking-[0.03em] text-slate-700 transition hover:bg-slate-50">
+                        <Link 
+                          href="/settings" 
+                          onClick={() => setProfileOpen(false)}
+                          className="flex w-full items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-left text-[13px] font-bold uppercase tracking-[0.03em] text-slate-700 transition hover:bg-slate-50"
+                        >
                           <Settings className="h-4 w-4 text-teal-600" />
                           Pengaturan Akun
-                        </button>
+                        </Link>
                         <button 
                           type="button" 
                           onClick={() => {

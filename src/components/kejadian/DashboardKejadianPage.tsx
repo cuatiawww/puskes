@@ -1826,9 +1826,6 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
               <p className="text-base sm:text-[17px] font-bold text-slate-600 mt-1.5 leading-relaxed">
                 Rekapitulasi status evaluasi, kapasitas tempat tidur (Rawat Inap), dan indeks kepatuhan standard fasilitas kesehatan.
               </p>
-              <p className="text-xs text-slate-500 font-semibold italic mt-2 bg-slate-50 border border-slate-200/60 rounded-xl px-3 py-1.5 block">
-                Tabel matriks ini merupakan <strong>kompilasi data terintegrasi</strong> dari berbagai sistem Kemenkes: status pelayanan dan wilayah kerja dari <strong>Regpus</strong>, kesiapan alkes dari <strong>ASPAK</strong>, ketersediaan obat dari <strong>SMILE</strong>, tenaga kesehatan dari <strong>SISDMK</strong>, dan status evaluasi PKP dari <strong>Komdat</strong>.
-              </p>
             </div>
 
             {/* Action Controls */}
@@ -1947,6 +1944,11 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
                 )}
               </tbody>
             </table>
+          </div>
+          <div className="mt-4 pt-3 border-t border-slate-100">
+            <p className="text-xs text-slate-500 font-semibold italic bg-slate-50 border border-slate-200/60 rounded-xl px-3 py-1.5 block">
+              Tabel matriks ini merupakan <strong>kompilasi data terintegrasi</strong> dari berbagai sistem Kemenkes: status pelayanan dan wilayah kerja dari <strong>Regpus</strong>, kesiapan alkes dari <strong>ASPAK</strong>, ketersediaan obat dari <strong>SMILE</strong>, tenaga kesehatan dari <strong>SISDMK</strong>, dan status evaluasi PKP dari <strong>Komdat</strong>.
+            </p>
           </div>
         </article>
       </section>

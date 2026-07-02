@@ -5,9 +5,22 @@ export interface User {
   username: string
   email: string
   nama_lengkap: string
+  no_telpon?: string
   level_user_id: number
   level_name?: string
   wilayah_scope?: WilayahScope
+  registration_details?: {
+    kategori_akses: string
+    nama_institusi?: string
+    pekerjaan_posisi?: string
+    tujuan_akses: string
+    tujuan_akses_lainnya?: string
+    alamat_user?: string
+    provinsi_id?: number
+    provinsi_name?: string
+    kabupaten_id?: number
+    kabupaten_name?: string
+  } | null
 }
 
 export type WilayahScopeMode = 'all' | 'provinsi' | 'kabupaten'
