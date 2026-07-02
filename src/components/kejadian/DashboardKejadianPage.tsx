@@ -86,6 +86,10 @@ export default function DashboardKejadianPage() {
   const [province, setProvince] = useState('')
   const [kabupaten, setKabupaten] = useState('')
 
+  // State untuk filter Tahun
+  const [selectedYear, setSelectedYear] = useState('2026')
+  const [showYearDropdown, setShowYearDropdown] = useState(false)
+
   // State untuk pencarian wilayah pintar
   const [searchQuery, setSearchQuery] = useState('')
   const [suggestions, setSuggestions] = useState<any[]>([])
@@ -542,12 +546,14 @@ export default function DashboardKejadianPage() {
 
   // When should the reset button show?
   const showResetButton = useMemo(() => {
+    if (selectedYear !== '2026') return true
     if (isKabLocked) return false
     if (isProvLocked) return kabupaten !== ''
     return province !== ''
-  }, [isKabLocked, isProvLocked, province, kabupaten])
+  }, [isKabLocked, isProvLocked, province, kabupaten, selectedYear])
 
   const handleResetFilter = () => {
+    setSelectedYear('2026')
     if (isProvLocked && user?.wilayah_scope?.provinsi?.label) {
       setKabupaten('')
       setCakupan('provinsi')
@@ -629,7 +635,7 @@ export default function DashboardKejadianPage() {
       setLoading(true)
       setError(null)
       // Resolve statistics locally from our mock dataset matching filters
-      const res = getPuskesmasStats(province, kabupaten)
+      const res = getPuskesmasStats(province, kabupaten, selectedYear)
       setData(res)
     } catch (err) {
       console.error('[puskesmas-stats]', err)
@@ -637,7 +643,7 @@ export default function DashboardKejadianPage() {
     } finally {
       setLoading(false)
     }
-  }, [province, kabupaten])
+  }, [province, kabupaten, selectedYear])
 
   useEffect(() => {
     fetchData()
@@ -894,6 +900,11 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
                   <span className="font-bold text-slate-500">Kab/Kota:</span>
                   <span className="font-black text-slate-900 uppercase text-xs sm:text-sm">{kabupaten || 'Semua Kab/Kota'}</span>
                 </span>
+                <span className="text-teal-200" aria-hidden="true">|</span>
+                <span className="inline-flex items-center gap-1">
+                  <span className="font-bold text-slate-500">Tahun:</span>
+                  <span className="font-black text-slate-900 uppercase text-xs sm:text-sm">{selectedYear}</span>
+                </span>
               </div>
             </div>
           </div>
@@ -931,9 +942,9 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
             borderBottomLeftRadius: '17px',
           }}
         >
-          {/* Card Body: Filter Controls in a responsive 3-column Grid (60% / 20% / 20%) */}
-          <div className="grid grid-cols-1 lg:grid-cols-[3fr_1fr_1fr] items-start gap-6 px-6 py-5">
-            {/* Grid 1: Filter Wilayah (60% width on lg) */}
+          {/* Card Body: Filter Controls in a responsive 4-column Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-[3fr_1fr_1.1fr_1.1fr] items-start gap-6 px-6 py-5">
+            {/* Grid 1: Filter Wilayah */}
             <div className="w-full">
               <FilterDropdownBar
                 onSummaryChange={handleSummaryChange}
@@ -943,7 +954,60 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
               />
             </div>
 
-            {/* Grid 2: Segmented Control — Kategori Layanan (20% width on lg) */}
+            {/* Grid 2: Year Dropdown */}
+            <div className="flex flex-col w-full">
+              <span className="text-xs sm:text-[14px] font-black text-slate-500 uppercase tracking-[0.12em] mb-1.5">Tahun</span>
+              <div className="relative w-full">
+                <button
+                  type="button"
+                  onClick={() => setShowYearDropdown(!showYearDropdown)}
+                  className={`flex items-center justify-between gap-2.5 rounded-xl border px-4 py-2.5 text-xs sm:text-sm font-black outline-none transition-all w-full ${
+                    selectedYear !== '2026'
+                      ? 'border-teal-200 bg-teal-50 text-teal-850'
+                      : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <span className="flex items-center gap-2 truncate">
+                    <Calendar className={`h-4 w-4 shrink-0 ${selectedYear !== '2026' ? 'text-teal-600' : 'text-slate-400'}`} />
+                    {selectedYear}
+                  </span>
+                  <ChevronDown className={`h-4 w-4 shrink-0 transition-transform duration-200 ${showYearDropdown ? 'rotate-180' : ''} ${selectedYear !== '2026' ? 'text-teal-500' : 'text-slate-400'}`} />
+                </button>
+
+                {showYearDropdown && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowYearDropdown(false)}
+                    />
+                    <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-full min-w-[150px] overflow-hidden rounded-2xl border border-slate-100 bg-white p-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.12)]">
+                      <p className="px-3 pb-2 text-xs font-black uppercase tracking-wider text-slate-500 border-b border-slate-100 mb-2">Pilih Tahun</p>
+                      {['2026', '2025', '2024', '2023', '2022', '2021'].map((yr) => {
+                        const isSelected = selectedYear === yr
+                        return (
+                          <button
+                            key={yr}
+                            type="button"
+                            onClick={() => {
+                              setSelectedYear(yr)
+                              setShowYearDropdown(false)
+                            }}
+                            className={`flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold cursor-pointer select-none transition-colors ${
+                              isSelected ? 'bg-teal-50 text-teal-850 font-black' : 'text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            <span>{yr}</span>
+                            {isSelected && <span className="ml-auto text-teal-700 font-black">✓</span>}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Grid 3: Segmented Control — Kategori Layanan (20% width on lg) */}
             <div className="flex flex-col w-full">
               <span className="text-xs sm:text-[14px] font-black text-slate-500 uppercase tracking-[0.12em] mb-1.5">Kategori Layanan</span>
               <div className="flex bg-slate-100 p-1 rounded-xl gap-0.5 w-full">
@@ -1432,6 +1496,9 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
                 <p className="text-sm sm:text-[16px] font-bold text-slate-650 mt-1 leading-relaxed">
                   Jumlah puskesmas yang teregistrasi secara digital dari tahun 2021 hingga 2026.
                 </p>
+                <p className="text-xs text-slate-500 font-semibold italic mt-1.5 bg-slate-50 border border-slate-200/60 rounded-xl px-3 py-1.5 inline-block">
+                  Sumber data: <strong>Regpus</strong> (Registrasi Puskesmas), diperbarui secara berkala sesuai perizinan baru.
+                </p>
               </div>
               <div className="flex-1 min-h-[280px] w-full">
                 {loading ? (
@@ -1481,6 +1548,9 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
                 <h4 className="text-lg sm:text-[21px] font-black text-slate-900 leading-tight">Kepatuhan Standar 9 Jenis Nakes</h4>
                 <p className="text-sm sm:text-[16px] font-bold text-slate-650 mt-1 leading-relaxed">
                   Proporsi puskesmas yang memenuhi standard minimal 9 jenis nakes wajib.
+                </p>
+                <p className="text-xs text-slate-500 font-semibold italic mt-1.5 bg-slate-50 border border-slate-200/60 rounded-xl px-3 py-1.5 inline-block">
+                  Sumber data: <strong>SISDMK / DREAMS</strong> Kemenkes via API terintegrasi, ditarik setiap tanggal 1.
                 </p>
               </div>
               <div className="flex-1 min-h-[240px] w-full relative flex items-center justify-center">
@@ -1563,6 +1633,9 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
             <p className="text-sm sm:text-[15px] font-medium text-slate-500 mt-1.5 leading-relaxed">
               Distribusi 10 penyakit dengan kasus terbanyak di Puskesmas — {getRegionLabel()}
             </p>
+            <p className="text-xs text-slate-500 font-semibold italic mt-2 bg-slate-50 border border-slate-200/60 rounded-xl px-3 py-1.5 block">
+              Sumber data: <strong>Komdat</strong> (Komunikasi Data) Kemenkes, ditarik berkala setiap tanggal 6 via unggahan file Excel.
+            </p>
           </div>
           <div className="flex-1 min-h-[300px]">
             {loading ? (
@@ -1632,6 +1705,9 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
                   ? 'Rasio beban kerja (penduduk / nakes aktual) rata-rata tiap Kabupaten/Kota.'
                   : 'Rasio beban kerja (penduduk / nakes aktual) tiap Puskesmas. Titik merah = rasio tinggi.'}
             </p>
+            <p className="text-xs text-slate-500 font-semibold italic mt-2 bg-slate-50 border border-slate-200/60 rounded-xl px-3 py-1.5 block">
+              Sumber data: <strong>Gabungan Data (Kompilasi)</strong> jumlah proyeksi penduduk (standard <strong>Regpus</strong> / Permenkes 19/2024) dibagi jumlah Nakes aktual dari sistem <strong>SISDMK</strong>.
+            </p>
           </div>
           <div className="flex-1 min-h-[300px]">
             {loading ? (
@@ -1691,6 +1767,9 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
             <p className="text-sm sm:text-[15px] font-medium text-slate-500 mt-1.5 leading-relaxed">
               Perbandingan rata-rata Tata Kelola, Kesiapan Alkes, dan Ketersediaan Obat per kategori layanan / wilayah.
             </p>
+            <p className="text-xs text-slate-500 font-semibold italic mt-2 bg-slate-50 border border-slate-200/60 rounded-xl px-3 py-1.5 block">
+              Sumber data: <strong>Gabungan Multi-Sumber</strong> dari data klasifikasi fasyankes (<strong>Regpus</strong>), evaluasi PKP (<strong>Komdat</strong>), sarana prasarana alat kesehatan (<strong>ASPAK</strong>), dan logistik obat (<strong>SMILE</strong>).
+            </p>
           </div>
           <div className="flex-1 min-h-[300px]">
             {loading ? (
@@ -1746,6 +1825,9 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
               </h3>
               <p className="text-base sm:text-[17px] font-bold text-slate-600 mt-1.5 leading-relaxed">
                 Rekapitulasi status evaluasi, kapasitas tempat tidur (Rawat Inap), dan indeks kepatuhan standard fasilitas kesehatan.
+              </p>
+              <p className="text-xs text-slate-500 font-semibold italic mt-2 bg-slate-50 border border-slate-200/60 rounded-xl px-3 py-1.5 block">
+                Tabel matriks ini merupakan <strong>kompilasi data terintegrasi</strong> dari berbagai sistem Kemenkes: status pelayanan dan wilayah kerja dari <strong>Regpus</strong>, kesiapan alkes dari <strong>ASPAK</strong>, ketersediaan obat dari <strong>SMILE</strong>, tenaga kesehatan dari <strong>SISDMK</strong>, dan status evaluasi PKP dari <strong>Komdat</strong>.
               </p>
             </div>
 
@@ -1922,6 +2004,96 @@ Tidak ada data sarana prasarana kesehatan terdaftar untuk wilayah ini.`)
 
             {/* Table / Content */}
             <div className="flex-1 overflow-y-auto p-5">
+              {/* Informasi Sumber Data Kemenkes (Sesuai PDF Hal 31-32) */}
+              <div className="mb-5 p-4 rounded-xl border border-teal-150 bg-teal-50/30 text-xs text-slate-700 space-y-2">
+                <div className="flex items-center gap-2 text-[#047D78] font-bold uppercase tracking-wider text-[11px] sm:text-xs">
+                  <Info className="h-4 w-4 shrink-0 text-teal-600 animate-pulse" />
+                  <span>Informasi Sumber Data & Variabel Pemantauan Kemenkes</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-1 font-semibold text-slate-650">
+                  <div>
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider mb-0.5">Variabel Terkait</span>
+                    <span className="text-slate-800 font-black">
+                      {selectedCard === 'tata_kelola' && 'Penilaian Kinerja Puskesmas (PKP) - Klaster 1 s/d 4 & Lintas Klaster'}
+                      {selectedCard === 'jumlah' && 'Kategori Pelayanan (Ranap/Non), Karakteristik Geografis, Izin Operasional'}
+                      {selectedCard === 'alkes' && 'Sarana, Prasarana, dan Alat Kesehatan (SPA) ≥ 60%'}
+                      {selectedCard === 'obat' && 'Perbekalan Kesehatan (PERBEKES) - Minimal 40 Obat Esensial & BMHP CKG'}
+                      {selectedCard === 'kecamatan_tanpa' && 'Status Layanan Pemerataan Puskesmas & Wilayah Administratif'}
+                      {selectedCard === 'beban' && 'Rasio Beban Pelayanan Penduduk terhadap Tenaga Kesehatan'}
+                      {selectedCard === 'sdm' && 'Estimasi & Distribusi Tenaga Kesehatan/Dokter'}
+                      {selectedCard === 'nakes' && 'Kepatuhan Kelengkapan Standard Minimal 9 Jenis Nakes Wajib'}
+                      {selectedCard === 'kategori_ranap' && 'Klasifikasi Sarana Rawat Inap & Fasilitas Bed / Ambulans'}
+                      {selectedCard === 'kategori_puskesmas' && 'Aksesibilitas Geografis (Biasa, Terpencil, Sangat Terpencil)'}
+                      {selectedCard === 'teregistrasi' && 'Nomor & Status Registrasi Operasional Fasyankes'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider mb-0.5">Aplikasi / Sumber Data</span>
+                    <span className="text-[#047D78] font-black">
+                      {['tata_kelola', 'beban', 'sdm', 'nakes'].includes(selectedCard) && 'KOMDAT (Komunikasi Data) & SISDMK'}
+                      {['jumlah', 'kategori_ranap', 'kategori_puskesmas', 'teregistrasi', 'kecamatan_tanpa'].includes(selectedCard) && 'REGPUS (Registrasi Puskesmas)'}
+                      {selectedCard === 'alkes' && 'ASPAK (Aplikasi Sarana Prasarana & Alat Kesehatan)'}
+                      {selectedCard === 'obat' && 'SMILE (Sistem Monitoring Imunisasi & Logistik Elektronik)'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider mb-0.5">Frekuensi Penarikan</span>
+                    <span className="text-slate-800 font-bold">
+                      {['tata_kelola', 'alkes', 'beban'].includes(selectedCard) && 'Setiap Tanggal 6 (Bulanan)'}
+                      {['sdm', 'nakes'].includes(selectedCard) && 'Setiap Tanggal 1 (Bulanan)'}
+                      {selectedCard === 'obat' && 'Setiap Awal Bulan'}
+                      {['jumlah', 'kategori_ranap', 'kategori_puskesmas', 'teregistrasi', 'kecamatan_tanpa'].includes(selectedCard) && 'Real-time / Sesuai Pemutakhiran Registrasi'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider mb-0.5">Aliran & Kode Unik</span>
+                    <span className="text-slate-800 font-bold">
+                      {['tata_kelola', 'beban'].includes(selectedCard) && 'Excel (Kode Kab, Kode Faskes)'}
+                      {['sdm', 'nakes', 'alkes'].includes(selectedCard) && 'API Terintegrasi (Kode Faskes)'}
+                      {selectedCard === 'obat' && 'Excel (SMILE System)'}
+                      {['jumlah', 'kategori_ranap', 'kategori_puskesmas', 'teregistrasi', 'kecamatan_tanpa'].includes(selectedCard) && 'Database Regpus (Kode Registrasi Faskes)'}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-[10px] text-slate-500 font-medium pt-2 border-t border-slate-200/50 leading-relaxed">
+                  {selectedCard === 'tata_kelola' && (
+                    <p>
+                      <strong>Catatan Teknis:</strong> Mengacu pada Permenkes No. 12 Tahun 2025 tentang Rencana Strategis Kemenkes 2025-2029 (Indikator IKK 14.3.1). Puskesmas dinyatakan bertata kelola baik jika memenuhi 3 kriteria: telah BLUD, menerapkan Integrasi Layanan Primer (ILP), dan memiliki nilai Kinerja Baik (PKP ≥ 80%) pada seluruh klaster pelayanan.
+                    </p>
+                  )}
+                  {selectedCard === 'jumlah' && (
+                    <p>
+                      <strong>Catatan Teknis:</strong> Data total Puskesmas didasarkan pada data master fasyankes nasional di <strong>Regpus</strong> (Registrasi Puskesmas) yang divalidasi silang secara periodik dengan dinas kesehatan provinsi.
+                    </p>
+                  )}
+                  {selectedCard === 'alkes' && (
+                    <p>
+                      <strong>Catatan Teknis:</strong> Kesiapan alat kesehatan minimal 60% diukur berdasarkan penginputan mandiri SPA (Sarana, Prasarana, dan Alat Kesehatan) di aplikasi <strong>ASPAK</strong> Kemenkes yang telah divalidasi oleh dinkes kabupaten/provinsi.
+                    </p>
+                  )}
+                  {selectedCard === 'obat' && (
+                    <p>
+                      <strong>Catatan Teknis:</strong> Ketersediaan obat dihitung dari persentase pemenuhan minimal 40 jenis obat esensial dan Bahan Medis Habis Pakai (BMHP) wajib untuk pelayanan dasar di puskesmas melalui pelaporan sistem logistik elektronik <strong>SMILE</strong>.
+                    </p>
+                  )}
+                  {selectedCard === 'kecamatan_tanpa' && (
+                    <p>
+                      <strong>Catatan Teknis:</strong> Diturunkan dari analisis spasial dengan mencocokkan koordinat Puskesmas terdaftar di <strong>Regpus</strong> dengan batas wilayah administratif kecamatan (Kemendagri) untuk merekomendasikan pembangunan faskes baru/Pustu.
+                    </p>
+                  )}
+                  {['beban', 'sdm', 'nakes'].includes(selectedCard) && (
+                    <p>
+                      <strong>Catatan Teknis:</strong> Mengacu pada Permenkes No. 19 Tahun 2024 tentang Penyelenggaraan Puskesmas. Kepatuhan ketenagaan dihitung berdasarkan pemenuhan minimal 9 jenis nakes wajib (termasuk Dokter, Dokter Gigi, Bidan, Perawat, dll) menggunakan data riil aplikasi <strong>SISDMK / DREAMS</strong>.
+                    </p>
+                  )}
+                  {['kategori_ranap', 'kategori_puskesmas', 'teregistrasi'].includes(selectedCard) && (
+                    <p>
+                      <strong>Catatan Teknis:</strong> Klasifikasi jenis pelayanan rawat inap, status geografis wilayah kerja, and keabsahan nomor registrasi izin operasional diatur dalam standard perizinan di bawah koordinasi sistem data registrasi pusat (<strong>Regpus</strong>).
+                    </p>
+                  )}
+                </div>
+              </div>
+
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>

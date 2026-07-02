@@ -427,7 +427,7 @@ const ALL_PUSKESMAS: PuskesmasMarker[] = [
   }
 ]
 
-export function getPuskesmasStats(provinceName = '', kabupatenName = ''): PuskesmasDashboardData {
+export function getPuskesmasStats(provinceName = '', kabupatenName = '', year = '2026'): PuskesmasDashboardData {
   // 1. Filter markers based on selection
   let markers = ALL_PUSKESMAS
   const provClean = provinceName.trim().toUpperCase()
@@ -438,6 +438,41 @@ export function getPuskesmasStats(provinceName = '', kabupatenName = ''): Puskes
   }
   if (kabClean) {
     markers = markers.filter((m) => m.kabupaten === kabClean)
+  }
+
+  // Filter and simulate markers historically by year
+  if (year && year !== 'Semua' && year !== '2026') {
+    const yr = parseInt(year, 10)
+    if (!isNaN(yr) && yr >= 2021 && yr <= 2025) {
+      let pct = 1.0
+      if (yr === 2025) pct = 0.96
+      else if (yr === 2024) pct = 0.92
+      else if (yr === 2023) pct = 0.88
+      else if (yr === 2022) pct = 0.85
+      else if (yr === 2021) pct = 0.80
+
+      const targetCount = Math.max(1, Math.round(markers.length * pct))
+      markers = markers.slice(0, targetCount)
+
+      // Reduce compliance percentages for older years
+      const factor = 1 - (2026 - yr) * 0.04 // e.g. 2025: 0.96, 2021: 0.80
+      markers = markers.map(m => {
+        const alkes = Math.max(10, Math.round(m.alkes_pct * factor))
+        const obat = Math.max(10, Math.round(m.obat_pct * factor))
+        const nakes = Math.max(10, Math.round(m.nakes_pct * factor))
+        let status_evaluasi: 'Baik' | 'Sedang' | 'Kurang' = 'Sedang'
+        if (alkes >= 80 && obat >= 80 && nakes >= 80) status_evaluasi = 'Baik'
+        else if (alkes < 65 || obat < 70) status_evaluasi = 'Kurang'
+
+        return {
+          ...m,
+          alkes_pct: alkes,
+          obat_pct: obat,
+          nakes_pct: nakes,
+          status_evaluasi
+        }
+      })
+    }
   }
 
   // Fallback: If no markers match (like filtering another province for which we don't have mock data),

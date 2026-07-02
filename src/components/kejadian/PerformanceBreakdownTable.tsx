@@ -387,6 +387,9 @@ export default function PerformanceBreakdownTable({ selectedProvince = '' }: Per
           <p className="text-base sm:text-[17px] font-bold text-slate-600 mt-1.5 leading-relaxed">
             Matriks evaluasi tata kelola, indikator DLI 6.1 (SDMK & Kesiapan Alkes), serta DLI 10.1 (SDM & Pelaporan) tingkat {isFiltered ? 'kabupaten/kota' : 'provinsi'}.
           </p>
+          <p className="text-xs text-slate-500 font-semibold italic mt-2 bg-slate-50 border border-slate-200/60 rounded-xl px-3 py-1.5 block">
+            Tabel analisis DLI ini menggabungkan: status BLUD, capaian ILP, dan nilai PKP (sumber: <strong>Komdat</strong> & <strong>Microsite</strong>); ketersediaan 9 Jenis Nakes (sumber: <strong>SISDMK / DREAMS</strong>); kesiapan Alkes ≥60% (sumber: <strong>ASPAK</strong>); serta data SDM & laporan penyerapan pembiayaan BOK/Insentif (sumber: <strong>Erenggar</strong> & aplikasi kapitasi).
+          </p>
         </div>
 
         {/* Action Controls */}
