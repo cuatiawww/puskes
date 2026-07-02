@@ -21,6 +21,7 @@ import {
   X,
   RefreshCw,
   Clock,
+  Network,
 } from 'lucide-react'
 
 
@@ -43,7 +44,7 @@ const sidebarMenu = [
   {
     title: 'Pengelolaan',
     items: [
-      { label: 'Verifikasi Data', href: '#', icon: ShieldCheck },
+      { label: 'Interoperabilitas', href: '/interoperabilitas', icon: Network },
       { label: 'Pengaturan', href: '/settings', icon: Settings },
     ],
   },
@@ -111,9 +112,8 @@ export function DashboardSidebar({ open, onClose }: DashboardSidebarProps) {
         />
       ) : null}
       <aside
-        className={`fixed left-0 top-0 z-40 h-screen w-[310px] border-r border-slate-200 bg-white text-slate-800 shadow-2xl transition-transform duration-300 ${
-          open ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed left-0 top-0 z-40 h-screen w-[310px] border-r border-slate-200 bg-white text-slate-800 shadow-2xl transition-transform duration-300 ${open ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         <div className="h-[3px] bg-teal-600" />
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-5 bg-[#fafcfc]">
@@ -152,7 +152,7 @@ export function DashboardSidebar({ open, onClose }: DashboardSidebarProps) {
                 {group.items.map((item) => {
                   const Icon = item.icon
                   const active = item.href !== '#' && pathname === item.href
- 
+
                   return (
                     <Link
                       key={item.label}
@@ -161,11 +161,10 @@ export function DashboardSidebar({ open, onClose }: DashboardSidebarProps) {
                         if (item.href === '#') event.preventDefault()
                         else onClose()
                       }}
-                      className={`flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold uppercase tracking-[0.03em] transition ${
-                        active
+                      className={`flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold uppercase tracking-[0.03em] transition ${active
                           ? 'bg-teal-50 text-teal-700 font-extrabold shadow-[inset_0_0_0_1px_rgba(20,184,166,0.22)]'
                           : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                      }`}
+                        }`}
                     >
                       <Icon className="h-4 w-4" />
                       {item.label}
@@ -187,7 +186,7 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
   const profileRef = useRef<HTMLDivElement>(null)
   const [notifOpen, setNotifOpen] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
-  
+
   const { user, logout, isAuthenticated } = useAuthStore()
   const [activeRegion, setActiveRegion] = useState('NASIONAL')
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -280,242 +279,249 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
                 <h1 className="max-w-[720px] text-2xl font-extrabold leading-tight tracking-normal text-slate-900 md:text-3xl">
                   {pathname === '/' || pathname === '/dashboard-kejadian'
                     ? 'ASISTENSI KINERJA PUSKESMAS'
-                    : 'DASHBOARD INDIKATOR PENILAIAN KINERJA FASILITAS KESEHATAN'}
+                    : pathname === '/interoperabilitas'
+                      ? 'PUSAT INTEROPERABILITAS DATA'
+                      : pathname === '/settings'
+                        ? 'PENGATURAN AKUN'
+                        : 'DASHBOARD INDIKATOR PENILAIAN KINERJA FASILITAS KESEHATAN'}
                 </h1>
                 <p className="mt-2 max-w-[760px] text-sm leading-relaxed text-slate-600 md:text-base">
                   {pathname === '/' || pathname === '/dashboard-kejadian'
                     ? `Asistensi penilaian kualitas pelayanan kesehatan primer dan evaluasi capaian indikator kinerja Puskesmas secara real-time di wilayah ${activeRegion}.`
-                    : 'Pantau perkembangan fasilitas kesehatan di seluruh Indonesia secara real-time.'}
+                    : pathname === '/interoperabilitas'
+                      ? 'Monitor aliran data integrasi SatuSehat dan status sinkronisasi sistem Kemenkes RI (Sesuai PMK Rencana Strategis).'
+                      : pathname === '/settings'
+                        ? 'Kelola informasi profil, detail akun, dan kata sandi keamanan Anda.'
+                        : 'Pantau perkembangan fasilitas kesehatan di seluruh Indonesia secara real-time.'}
                 </p>
               </div>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2.5 lg:justify-end">
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="relative inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white/95 text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:border-teal-200 hover:text-teal-700 hover:shadow-md disabled:cursor-wait"
+              aria-label="Refresh Data"
+              title="Refresh Data"
+            >
+              <RefreshCw className={`h-[18px] w-[18px] text-slate-600 ${isRefreshing ? 'animate-spin text-teal-650' : ''}`} />
+            </button>
+            <div className="relative" ref={notifRef}>
               <button
                 type="button"
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                className="relative inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white/95 text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:border-teal-200 hover:text-teal-700 hover:shadow-md disabled:cursor-wait"
-                aria-label="Refresh Data"
-                title="Refresh Data"
+                onClick={() => setNotifOpen((prev) => !prev)}
+                className="relative inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white/95 text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:border-teal-200 hover:text-teal-700 hover:shadow-md"
+                aria-label="Notifikasi"
               >
-                <RefreshCw className={`h-[18px] w-[18px] text-slate-600 ${isRefreshing ? 'animate-spin text-teal-650' : ''}`} />
+                <Bell className="h-[19px] w-[19px]" />
+                <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full border-2 border-white bg-teal-600 px-1 text-[10px] font-bold text-white">
+                  5
+                </span>
               </button>
-              <div className="relative" ref={notifRef}>
-                <button
-                  type="button"
-                  onClick={() => setNotifOpen((prev) => !prev)}
-                  className="relative inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white/95 text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:border-teal-200 hover:text-teal-700 hover:shadow-md"
-                  aria-label="Notifikasi"
-                >
-                  <Bell className="h-[19px] w-[19px]" />
-                  <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full border-2 border-white bg-teal-600 px-1 text-[10px] font-bold text-white">
-                    5
-                  </span>
-                </button>
 
-                {notifOpen && (
-                  <div className="absolute right-0 top-14 z-30 w-[320px] sm:w-[380px] rounded-2xl border border-slate-200 bg-white/98 backdrop-blur-md p-4 shadow-[0_12px_40px_rgba(15,118,110,0.15)] flex flex-col animate-in slide-in-from-top-2 duration-155">
-                    {/* Header */}
-                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-slate-800">Notifikasi</span>
-                        <span className="rounded-full bg-teal-50 border border-teal-100 px-2 py-0.5 text-[9px] font-extrabold text-teal-700 uppercase tracking-wide">
-                          5 Baru
-                        </span>
+              {notifOpen && (
+                <div className="absolute right-0 top-14 z-30 w-[320px] sm:w-[380px] rounded-2xl border border-slate-200 bg-white/98 backdrop-blur-md p-4 shadow-[0_12px_40px_rgba(15,118,110,0.15)] flex flex-col animate-in slide-in-from-top-2 duration-155">
+                  {/* Header */}
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-slate-800">Notifikasi</span>
+                      <span className="rounded-full bg-teal-50 border border-teal-100 px-2 py-0.5 text-[9px] font-extrabold text-teal-700 uppercase tracking-wide">
+                        5 Baru
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setNotifOpen(false)}
+                      className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* List */}
+                  <div className="mt-2 divide-y divide-slate-100 max-h-[320px] overflow-y-auto pr-1 no-scrollbar space-y-1">
+                    {notificationsData.map((notif) => {
+                      const NotifIcon = notif.icon;
+                      return (
+                        <div
+                          key={notif.id}
+                          className={`flex items-start gap-3 py-2.5 px-2 transition hover:bg-slate-50/80 rounded-xl cursor-pointer ${notif.unread ? 'bg-teal-50/10' : ''
+                            }`}
+                        >
+                          {/* Left: Icon */}
+                          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${notif.iconBg}`}>
+                            <NotifIcon className="h-4.5 w-4.5" />
+                          </div>
+
+                          {/* Middle: Title & Desc */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className={`text-[11px] font-bold text-slate-800 truncate leading-tight ${notif.unread ? 'text-teal-955 font-extrabold' : ''}`}>
+                                {notif.title}
+                              </p>
+                              {/* Right: Time */}
+                              <span className="inline-flex items-center gap-1 text-[9px] font-medium text-slate-400 whitespace-nowrap pt-0.5 shrink-0">
+                                <Clock className="h-2.5 w-2.5" />
+                                {notif.time}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-[10px] text-slate-500 leading-normal line-clamp-2">
+                              {notif.description}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="mt-3 pt-3 border-t border-slate-100">
+                    <button
+                      onClick={() => {
+                        alert('Buka halaman detail notifikasi');
+                        setNotifOpen(false);
+                      }}
+                      className="w-full py-2 text-center text-[10px] font-extrabold uppercase tracking-widest text-teal-800 bg-teal-50 hover:bg-teal-100 rounded-xl transition-all"
+                    >
+                      LIHAT SEMUA NOTIFIKASI
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              className="inline-flex h-12 items-center gap-2.5 whitespace-nowrap rounded-xl border border-teal-200 bg-white/95 px-4 text-xs font-bold uppercase tracking-[0.05em] text-teal-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-teal-50 hover:shadow-md"
+            >
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-teal-50 text-teal-600">
+                <Download className="h-4 w-4" />
+              </span>
+              Unduh Laporan
+            </button>
+            <div className="relative" ref={profileRef}>
+              <button
+                type="button"
+                onClick={() => setProfileOpen((prev) => !prev)}
+                className="inline-flex h-12 items-center gap-2.5 rounded-xl border border-slate-200 bg-white/95 px-2.5 pr-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-md"
+              >
+                <div className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 text-xs font-extrabold text-white shadow-sm">
+                  {initials}
+                </div>
+                <div className="hidden sm:block">
+                  <p className="text-xs font-bold uppercase tracking-[0.04em] leading-4 text-slate-900">{initialName}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-teal-700">{roleName}</p>
+                </div>
+                <ChevronDown className={`h-3.5 w-3.5 text-slate-500 transition ${profileOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {profileOpen ? (
+                isAuthenticated ? (
+                  <div className="absolute right-0 top-14 z-30 w-72 rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 text-sm font-extrabold text-white">
+                          {initials}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-800">{initialName}</p>
+                          <p className="text-xs text-slate-500">{userEmail}</p>
+                        </div>
                       </div>
                       <button
-                        onClick={() => setNotifOpen(false)}
-                        className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+                        type="button"
+                        onClick={() => setProfileOpen(false)}
+                        className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                        aria-label="Tutup"
                       >
                         <X className="h-4 w-4" />
                       </button>
                     </div>
-
-                    {/* List */}
-                    <div className="mt-2 divide-y divide-slate-100 max-h-[320px] overflow-y-auto pr-1 no-scrollbar space-y-1">
-                      {notificationsData.map((notif) => {
-                        const NotifIcon = notif.icon;
-                        return (
-                          <div
-                            key={notif.id}
-                            className={`flex items-start gap-3 py-2.5 px-2 transition hover:bg-slate-50/80 rounded-xl cursor-pointer ${
-                              notif.unread ? 'bg-teal-50/10' : ''
-                            }`}
-                          >
-                            {/* Left: Icon */}
-                            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${notif.iconBg}`}>
-                              <NotifIcon className="h-4.5 w-4.5" />
-                            </div>
-
-                            {/* Middle: Title & Desc */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-2">
-                                <p className={`text-[11px] font-bold text-slate-800 truncate leading-tight ${notif.unread ? 'text-teal-955 font-extrabold' : ''}`}>
-                                  {notif.title}
-                                </p>
-                                {/* Right: Time */}
-                                <span className="inline-flex items-center gap-1 text-[9px] font-medium text-slate-400 whitespace-nowrap pt-0.5 shrink-0">
-                                  <Clock className="h-2.5 w-2.5" />
-                                  {notif.time}
-                                </span>
-                              </div>
-                              <p className="mt-1 text-[10px] text-slate-500 leading-normal line-clamp-2">
-                                {notif.description}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
+                    <div className="mt-4 rounded-lg border border-teal-100 bg-teal-50 px-3 py-2">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-teal-700">Akses</p>
+                      <p className="mt-0.5 text-xs text-slate-600">{accessLabel}</p>
                     </div>
-
-                    {/* Footer */}
-                    <div className="mt-3 pt-3 border-t border-slate-100">
-                      <button
-                        onClick={() => {
-                          alert('Buka halaman detail notifikasi');
-                          setNotifOpen(false);
-                        }}
-                        className="w-full py-2 text-center text-[10px] font-extrabold uppercase tracking-widest text-teal-800 bg-teal-50 hover:bg-teal-100 rounded-xl transition-all"
+                    <div className="mt-3 space-y-2">
+                      <button type="button" className="flex w-full items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-left text-[13px] font-bold uppercase tracking-[0.03em] text-slate-700 transition hover:bg-slate-50">
+                        <UserCircle className="h-4 w-4 text-teal-600" />
+                        Profil Saya
+                      </button>
+                      <Link
+                        href="/settings"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex w-full items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-left text-[13px] font-bold uppercase tracking-[0.03em] text-slate-700 transition hover:bg-slate-50"
                       >
-                        LIHAT SEMUA NOTIFIKASI
+                        <Settings className="h-4 w-4 text-teal-600" />
+                        Pengaturan Akun
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          logout()
+                          setProfileOpen(false)
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-left text-[13px] font-bold uppercase tracking-[0.03em] text-red-600 transition hover:bg-red-50"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Keluar
                       </button>
                     </div>
                   </div>
-                )}
-              </div>
-              <button
-                type="button"
-                className="inline-flex h-12 items-center gap-2.5 whitespace-nowrap rounded-xl border border-teal-200 bg-white/95 px-4 text-xs font-bold uppercase tracking-[0.05em] text-teal-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-teal-50 hover:shadow-md"
-              >
-                <span className="grid h-7 w-7 place-items-center rounded-lg bg-teal-50 text-teal-600">
-                  <Download className="h-4 w-4" />
-                </span>
-                Unduh Laporan
-              </button>
-              <div className="relative" ref={profileRef}>
-                <button
-                  type="button"
-                  onClick={() => setProfileOpen((prev) => !prev)}
-                  className="inline-flex h-12 items-center gap-2.5 rounded-xl border border-slate-200 bg-white/95 px-2.5 pr-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-md"
-                >
-                  <div className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 text-xs font-extrabold text-white shadow-sm">
-                    {initials}
-                  </div>
-                  <div className="hidden sm:block">
-                    <p className="text-xs font-bold uppercase tracking-[0.04em] leading-4 text-slate-900">{initialName}</p>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-teal-700">{roleName}</p>
-                  </div>
-                  <ChevronDown className={`h-3.5 w-3.5 text-slate-500 transition ${profileOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {profileOpen ? (
-                  isAuthenticated ? (
-                    <div className="absolute right-0 top-14 z-30 w-72 rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 text-sm font-extrabold text-white">
-                            {initials}
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-slate-800">{initialName}</p>
-                            <p className="text-xs text-slate-500">{userEmail}</p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setProfileOpen(false)}
-                          className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-                          aria-label="Tutup"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
+                ) : (
+                  <div className="absolute right-0 top-14 z-30 w-72 rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-extrabold text-slate-800">Akses Pengunjung</p>
+                        <p className="text-xs text-slate-500">Silakan login untuk fitur lengkap.</p>
                       </div>
-                      <div className="mt-4 rounded-lg border border-teal-100 bg-teal-50 px-3 py-2">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-teal-700">Akses</p>
-                        <p className="mt-0.5 text-xs text-slate-600">{accessLabel}</p>
-                      </div>
-                      <div className="mt-3 space-y-2">
-                        <button type="button" className="flex w-full items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-left text-[13px] font-bold uppercase tracking-[0.03em] text-slate-700 transition hover:bg-slate-50">
-                          <UserCircle className="h-4 w-4 text-teal-600" />
-                          Profil Saya
-                        </button>
-                        <Link 
-                          href="/settings" 
-                          onClick={() => setProfileOpen(false)}
-                          className="flex w-full items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-left text-[13px] font-bold uppercase tracking-[0.03em] text-slate-700 transition hover:bg-slate-50"
-                        >
-                          <Settings className="h-4 w-4 text-teal-600" />
-                          Pengaturan Akun
-                        </Link>
-                        <button 
-                          type="button" 
-                          onClick={() => {
-                            logout()
-                            setProfileOpen(false)
-                          }}
-                          className="flex w-full items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-left text-[13px] font-bold uppercase tracking-[0.03em] text-red-600 transition hover:bg-red-50"
-                        >
-                          <LogOut className="h-4 w-4" />
-                          Keluar
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setProfileOpen(false)}
+                        className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                        aria-label="Tutup"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
                     </div>
-                  ) : (
-                    <div className="absolute right-0 top-14 z-30 w-72 rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-extrabold text-slate-800">Akses Pengunjung</p>
-                          <p className="text-xs text-slate-500">Silakan login untuk fitur lengkap.</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setProfileOpen(false)}
-                          className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-                          aria-label="Tutup"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <div className="mt-3 rounded-lg border border-teal-100 bg-teal-50 px-3 py-2">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-teal-700">Akses</p>
-                        <p className="mt-0.5 text-xs text-slate-600">{accessLabel}</p>
-                      </div>
-                      <div className="mt-4 space-y-2">
-                        <Link 
-                          href="/login" 
-                          onClick={() => {
-                            logout()
-                            setProfileOpen(false)
-                          }}
-                          className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-center text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-teal-800"
-                        >
-                          Masuk (Login)
-                        </Link>
-                        <Link 
-                          href="/register" 
-                          onClick={() => {
-                            logout()
-                            setProfileOpen(false)
-                          }}
-                          className="flex w-full items-center justify-center gap-2 rounded-xl border border-teal-200 bg-white px-4 py-2.5 text-center text-xs font-bold uppercase tracking-wider text-teal-700 shadow-sm transition hover:bg-teal-50"
-                        >
-                          Daftar Sekarang
-                        </Link>
-                        <button 
-                          type="button" 
-                          onClick={() => {
-                            logout()
-                            setProfileOpen(false)
-                          }}
-                          className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-center text-xs font-bold uppercase tracking-wider text-red-600 shadow-sm transition hover:bg-red-50"
-                        >
-                          Keluar Akses Tamu
-                        </button>
-                      </div>
+                    <div className="mt-3 rounded-lg border border-teal-100 bg-teal-50 px-3 py-2">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-teal-700">Akses</p>
+                      <p className="mt-0.5 text-xs text-slate-600">{accessLabel}</p>
                     </div>
-                  )
-                ) : null}
-              </div>
+                    <div className="mt-4 space-y-2">
+                      <Link
+                        href="/login"
+                        onClick={() => {
+                          logout()
+                          setProfileOpen(false)
+                        }}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-center text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-teal-800"
+                      >
+                        Masuk (Login)
+                      </Link>
+                      <Link
+                        href="/register"
+                        onClick={() => {
+                          logout()
+                          setProfileOpen(false)
+                        }}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-teal-200 bg-white px-4 py-2.5 text-center text-xs font-bold uppercase tracking-wider text-teal-700 shadow-sm transition hover:bg-teal-50"
+                      >
+                        Daftar Sekarang
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          logout()
+                          setProfileOpen(false)
+                        }}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-center text-xs font-bold uppercase tracking-wider text-red-600 shadow-sm transition hover:bg-red-50"
+                      >
+                        Keluar Akses Tamu
+                      </button>
+                    </div>
+                  </div>
+                )
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
