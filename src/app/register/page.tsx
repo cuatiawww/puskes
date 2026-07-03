@@ -33,6 +33,22 @@ export default function RegisterPage() {
   const [captchaImage, setCaptchaImage] = useState('')
   const [captchaValue, setCaptchaValue] = useState('')
   const [loadingCaptcha, setLoadingCaptcha] = useState(false)
+  const [settings, setSettings] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const res = await fetch(`${baseApiUrl}/system-settings`)
+        const payload = await res.json()
+        if (payload?.success && payload?.data) {
+          setSettings(payload.data)
+        }
+      } catch (err) {
+        console.error('Gagal mengambil pengaturan sistem', err)
+      }
+    }
+    fetchSettings()
+  }, [baseApiUrl])
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [showTermsModal, setShowTermsModal] = useState(false)
 
@@ -372,10 +388,11 @@ export default function RegisterPage() {
     <div className="relative min-h-screen overflow-hidden py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
       {/* Background image */}
       <Image
-        src="/pkk.png"
+        src={settings.frontend_register_background || "/pkk.png"}
         alt="Background"
         fill
         priority
+        unoptimized
         sizes="100vw"
         className="object-cover object-center z-0"
       />
@@ -971,36 +988,41 @@ export default function RegisterPage() {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto px-6 py-5 text-sm text-slate-600 space-y-4 leading-relaxed scrollbar-thin">
-              <p>
-                Selamat datang di <strong>Asistensi Kinerja Puskesmas</strong>. Dengan mendaftar dan menggunakan sistem ini, Anda setuju untuk mematuhi ketentuan di bawah ini:
-              </p>
+            <div 
+              className="flex-1 overflow-y-auto px-6 py-5 text-sm text-slate-600 space-y-4 leading-relaxed scrollbar-thin"
+              dangerouslySetInnerHTML={{
+                __html: settings.frontend_terms_conditions || `
+                  <p>
+                    Selamat datang di <strong>Asistensi Kinerja Puskesmas</strong>. Dengan mendaftar dan menggunakan sistem ini, Anda setuju untuk mematuhi ketentuan di bawah ini:
+                  </p>
 
-              <h4 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider">1. Hak Akses & Akun</h4>
-              <p className="pl-3 border-l-2 border-teal-500 text-slate-600">
-                Penggunaan akun ini terbatas untuk tujuan penelitian, riset, pemantauan nasional, dan keperluan kedinasan/lintas sektor resmi. Anda bertanggung jawab penuh atas kerahasiaan kata sandi dan aktivitas akun Anda.
-              </p>
+                  <h4 class="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider">1. Hak Akses & Akun</h4>
+                  <p class="pl-3 border-l-2 border-teal-500 text-slate-600">
+                    Penggunaan akun ini terbatas untuk tujuan penelitian, riset, pemantauan nasional, dan keperluan kedinasan/lintas sektor resmi. Anda bertanggung jawab penuh atas kerahasiaan kata sandi dan aktivitas akun Anda.
+                  </p>
 
-              <h4 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider">2. Penggunaan Data</h4>
-              <p className="pl-3 border-l-2 border-teal-500 text-slate-600">
-                Data sarana fasilitas kesehatan, wilayah BPS, dan laporan bencana yang diperoleh melalui sistem ini hanya boleh digunakan sesuai tujuan akses yang diajukan. Dilarang menyebarkan, memanipulasi, atau menyalahgunakan data yang dapat membahayakan privasi atau operasional fasilitas kesehatan.
-              </p>
+                  <h4 class="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider">2. Penggunaan Data</h4>
+                  <p class="pl-3 border-l-2 border-teal-500 text-slate-600">
+                    Data sarana fasilitas kesehatan, wilayah BPS, dan laporan bencana yang diperoleh melalui sistem ini hanya boleh digunakan sesuai tujuan akses yang diajukan. Dilarang menyebarkan, memanipulasi, atau menyalahgunakan data yang dapat membahayakan privasi atau operasional fasilitas kesehatan.
+                  </p>
 
-              <h4 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider">3. Verifikasi & Validasi</h4>
-              <p className="pl-3 border-l-2 border-teal-500 text-slate-600">
-                Pendaftaran akun Anda memerlukan verifikasi email melalui OTP dan persetujuan manual oleh Administrator Pusat. Kami berhak menangguhkan atau menghapus akun jika ditemukan pelanggaran atau pemalsuan data diri.
-              </p>
+                  <h4 class="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider">3. Verifikasi & Validasi</h4>
+                  <p class="pl-3 border-l-2 border-teal-500 text-slate-600">
+                    Pendaftaran akun Anda memerlukan verifikasi email melalui OTP dan persetujuan manual oleh Administrator Pusat. Kami berhak menangguhkan atau menghapus akun jika ditemukan pelanggaran atau pemalsuan data diri.
+                  </p>
 
-              <h4 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider">4. Keamanan Sistem</h4>
-              <p className="pl-3 border-l-2 border-teal-500 text-slate-600">
-                Sistem ini dilindungi oleh mekanisme keamanan berlapis, termasuk captcha dan verifikasi akses. Setiap percobaan akses ilegal, peretasan, atau aktivitas mencurigakan lainnya akan diproses sesuai hukum yang berlaku di Republik Indonesia.
-              </p>
+                  <h4 class="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider">4. Keamanan Sistem</h4>
+                  <p class="pl-3 border-l-2 border-teal-500 text-slate-600">
+                    Sistem ini dilindungi oleh mekanisme keamanan berlapis, termasuk captcha dan verifikasi akses. Setiap percobaan akses ilegal, peretasan, atau aktivitas mencurigakan lainnya akan diproses sesuai hukum yang berlaku di Republik Indonesia.
+                  </p>
 
-              <p className="text-[12px] text-slate-400 pt-2 border-t border-slate-100">
-                Terakhir diperbarui: 15 Juni 2026<br />
-                Kementerian Kesehatan Republik Indonesia.
-              </p>
-            </div>
+                  <p class="text-[12px] text-slate-400 pt-2 border-t border-slate-100">
+                    Terakhir diperbarui: 15 Juni 2026<br />
+                    Kementerian Kesehatan Republik Indonesia.
+                  </p>
+                `
+              }}
+            />
 
             {/* Footer */}
             <div className="px-6 py-4 bg-slate-50 rounded-b-3xl border-t border-slate-100 flex justify-end gap-3">

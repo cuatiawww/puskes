@@ -4,7 +4,7 @@ import { FormEvent, useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { AlertCircle, Eye, EyeOff, Loader2, LockKeyhole, LogIn, UserRound, ShieldCheck, Activity, MapPin, RefreshCw } from 'lucide-react'
+import { AlertCircle, Eye, EyeOff, Loader2, LockKeyhole, LogIn, UserRound, ShieldCheck, Activity, MapPin, RefreshCw, X } from 'lucide-react'
 import { useAuthStore, type User } from '@/lib/authStore'
 import { buildApiUrl } from '@/lib/utils/api'
 
@@ -37,6 +37,22 @@ export default function LoginPage() {
   const [captchaQuestion, setCaptchaQuestion] = useState('')
   const [captchaValue, setCaptchaValue] = useState('')
   const [loadingCaptcha, setLoadingCaptcha] = useState(false)
+  const [settings, setSettings] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const res = await fetch(buildApiUrl('/api/system-settings'))
+        const payload = await res.json()
+        if (payload?.success && payload?.data) {
+          setSettings(payload.data)
+        }
+      } catch (err) {
+        console.error('Gagal mengambil pengaturan sistem', err)
+      }
+    }
+    fetchSettings()
+  }, [])
 
   const fetchCaptcha = useCallback(async () => {
     setLoadingCaptcha(true)
@@ -133,10 +149,11 @@ export default function LoginPage() {
       <div className="relative hidden min-h-screen overflow-hidden lg:flex lg:flex-col">
         {/* Background image */}
         <Image
-          src="/pkk.png"
+          src={settings.frontend_login_background || "/pkk.png"}
           alt="Asistensi Kinerja Puskesmas"
           fill
           priority
+          unoptimized
           sizes="60vw"
           className="object-cover object-center"
         />
@@ -158,10 +175,11 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="flex items-center gap-3">
             <Image
-              src="/Logo-Kemenkes.png"
+              src={settings.frontend_login_logo || "/Logo-Kemenkes.png"}
               alt="Logo Kementerian Kesehatan"
               width={160}
               height={58}
+              unoptimized
               className="h-auto w-[160px] brightness-0 invert"
               priority
             />
@@ -169,13 +187,11 @@ export default function LoginPage() {
 
           {/* Main copy */}
           <div className="max-w-xl pb-4">
-            <h1 className="mt-4 text-[42px] font-extrabold leading-[1.1] tracking-tight text-white xl:text-[52px]">
-              Indikator Penilaian<br />
-              <span className="text-teal-300">Kinerja Puskesmas</span>
+            <h1 className="mt-4 text-[42px] font-extrabold leading-[1.1] tracking-tight text-white xl:text-[52px] whitespace-pre-line">
+              {settings.frontend_app_title || 'Indikator Penilaian\nKinerja Puskesmas'}
             </h1>
             <p className="mt-4 text-[15px] leading-relaxed text-teal-100/80 xl:text-[16px]">
-              Sistem pemantauan terpadu untuk melihat capaian, sebaran, dan
-              perkembangan Puskesmas di seluruh wilayah Indonesia.
+              {settings.frontend_app_subtitle || 'Sistem pemantauan terpadu untuk melihat capaian, sebaran, dan perkembangan Puskesmas di seluruh wilayah Indonesia.'}
             </p>
 
             {/* Stats row */}
@@ -200,7 +216,7 @@ export default function LoginPage() {
 
           {/* Footer credit */}
           <p className="text-[12px] text-teal-300/50">
-            Â© {new Date().getFullYear()} Kementerian Kesehatan Republik Indonesia
+            {settings.frontend_footer_text || `© ${new Date().getFullYear()} Kementerian Kesehatan Republik Indonesia`}
           </p>
         </div>
       </div>
@@ -212,10 +228,11 @@ export default function LoginPage() {
           {/* Mobile-only logo */}
           <div className="mb-8 flex items-center gap-3 lg:hidden">
             <Image
-              src="/Logo-Kemenkes.png"
+              src={settings.frontend_login_logo || "/Logo-Kemenkes.png"}
               alt="Logo Kementerian Kesehatan"
               width={140}
               height={50}
+              unoptimized
               className="h-auto w-[140px]"
               priority
             />
@@ -228,10 +245,10 @@ export default function LoginPage() {
             {/* Header */}
             <div className="mb-7">
               <h2 className="mt-3 text-[28px] font-extrabold leading-tight tracking-tight text-slate-900 sm:text-[32px]">
-                Asistensi Kinerja Puskesmas
+                {settings.frontend_login_card_title || 'Asistensi Kinerja Puskesmas'}
               </h2>
               <p className="mt-1.5 text-[14px] text-slate-500">
-                Silakan masuk untuk mengakses data kinerja Puskesmas.
+                {settings.frontend_login_card_subtitle || 'Silakan masuk untuk mengakses data kinerja Puskesmas.'}
               </p>
             </div>
 
@@ -398,9 +415,8 @@ export default function LoginPage() {
           </div>
 
           {/* Footer note */}
-          <p className="mt-5 text-center text-[12px] text-slate-400">
-            Akses terbatas untuk pengguna yang berwenang.
-            <br />Hubungi admin jika mengalami kendala masuk.
+          <p className="mt-5 text-center text-[12px] text-slate-400 whitespace-pre-line">
+            {settings.frontend_login_note || "Akses terbatas untuk pengguna yang berwenang.\nHubungi admin jika mengalami kendala masuk."}
           </p>
         </div>
       </section>

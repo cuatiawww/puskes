@@ -5,8 +5,37 @@ const backendBaseUrl = (
   'https://sipkk-new.mediaciptainformasi.co.id'
 ).replace(/\/+$/, '')
 
+// Extract hostname from backend base url
+let backendHostname = "sipkk-new.mediaciptainformasi.co.id";
+try {
+  const url = new URL(backendBaseUrl);
+  backendHostname = url.hostname;
+} catch (e) {
+  // Ignore
+}
+
 const nextConfig: NextConfig = {
   serverExternalPackages: ['svg-captcha'],
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'https',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'http',
+        hostname: backendHostname,
+      },
+      {
+        protocol: 'https',
+        hostname: backendHostname,
+      },
+    ],
+  },
   async rewrites() {
     return {
       fallback: [
