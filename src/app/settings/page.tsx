@@ -19,7 +19,8 @@ import {
   Save,
   ArrowLeft,
   Check,
-  X
+  X,
+  MapPin
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -36,6 +37,8 @@ export default function SettingsPage() {
   const [namaLengkap, setNamaLengkap] = useState('')
   const [email, setEmail] = useState('')
   const [noTelpon, setNoTelpon] = useState('')
+  const [alamat, setAlamat] = useState('')
+  const [jenisKelamin, setJenisKelamin] = useState('')
 
   // Password Form States
   const [oldPassword, setOldPassword] = useState('')
@@ -95,6 +98,8 @@ export default function SettingsPage() {
       setNamaLengkap(user.nama_lengkap || '')
       setEmail(user.email || '')
       setNoTelpon(user.no_telpon || '')
+      setAlamat((user as any).alamat || '')
+      setJenisKelamin((user as any).jenis_kelamin || '')
     }
   }, [user])
 
@@ -130,7 +135,9 @@ export default function SettingsPage() {
           username,
           nama_lengkap: namaLengkap,
           email,
-          no_telpon: noTelpon
+          no_telpon: noTelpon,
+          alamat,
+          jenis_kelamin: jenisKelamin
         })
       })
 
@@ -337,6 +344,38 @@ export default function SettingsPage() {
                           onChange={(e) => setNoTelpon(e.target.value)}
                           placeholder="Contoh: 08123456789"
                           className="h-full min-w-0 flex-1 bg-transparent text-base sm:text-lg font-bold text-slate-800 outline-none placeholder:text-slate-400 placeholder:font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Jenis Kelamin */}
+                    <div className="space-y-2">
+                      <label className="block text-sm sm:text-base font-black text-slate-500 uppercase tracking-wider">Jenis Kelamin</label>
+                      <div className="flex h-12 items-center gap-3.5 rounded-xl border border-slate-200 bg-slate-50/50 px-4 transition-all duration-200 focus-within:border-teal-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-teal-100">
+                        <UserRound className="h-[20px] w-[20px] text-slate-400 shrink-0" />
+                        <select
+                          value={jenisKelamin}
+                          onChange={(e) => setJenisKelamin(e.target.value)}
+                          className="h-full min-w-0 flex-1 bg-transparent text-base sm:text-lg font-bold text-slate-800 outline-none cursor-pointer"
+                        >
+                          <option value="">-- Pilih Jenis Kelamin --</option>
+                          <option value="Laki-laki">Laki-laki</option>
+                          <option value="Perempuan">Perempuan</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Alamat */}
+                    <div className="space-y-2 md:col-span-2">
+                      <label className="block text-sm sm:text-base font-black text-slate-500 uppercase tracking-wider">Alamat</label>
+                      <div className="flex min-h-[96px] py-3 items-start gap-3.5 rounded-xl border border-slate-200 bg-slate-50/50 px-4 transition-all duration-200 focus-within:border-teal-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-teal-100">
+                        <MapPin className="h-[20px] w-[20px] text-slate-400 shrink-0 mt-1" />
+                        <textarea
+                          value={alamat}
+                          onChange={(e) => setAlamat(e.target.value)}
+                          placeholder="Masukkan alamat lengkap Anda"
+                          rows={3}
+                          className="w-full flex-1 bg-transparent text-base sm:text-lg font-bold text-slate-800 outline-none placeholder:text-slate-400 placeholder:font-medium resize-none"
                         />
                       </div>
                     </div>

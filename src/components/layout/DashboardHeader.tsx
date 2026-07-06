@@ -22,6 +22,7 @@ import {
   RefreshCw,
   Clock,
   Network,
+  ExternalLink,
 } from 'lucide-react'
 
 
@@ -101,6 +102,28 @@ const notificationsData = [
 
 export function DashboardSidebar({ open, onClose }: DashboardSidebarProps) {
   const pathname = usePathname()
+  const { token } = useAuthStore()
+
+  const backendBaseUrl = process.env.NEXT_PUBLIC_SIPKK_BACKEND_BASE_URL || 'http://localhost/puskesmas'
+  const ssoUrl = `${backendBaseUrl.replace(/\/+$/, '')}/site/sso-login?token=${token}`
+
+  const dynamicSidebarMenu = [
+    {
+      title: 'Menu Utama',
+      items: [
+        { label: 'Dashboard', href: '/', icon: Home },
+        { label: 'Profil Saya', href: '/profile', icon: UserCircle },
+      ],
+    },
+    {
+      title: 'Pengelolaan',
+      items: [
+        { label: 'Akses Sistem', href: ssoUrl, icon: ExternalLink },
+        { label: 'Interoperabilitas', href: '/interoperabilitas', icon: Network },
+        { label: 'Pengaturan', href: '/settings', icon: Settings },
+      ],
+    },
+  ]
 
   return (
     <>
@@ -144,7 +167,7 @@ export function DashboardSidebar({ open, onClose }: DashboardSidebarProps) {
           </button>
         </div>
         <nav className="h-[calc(100vh-80px)] space-y-5 overflow-y-auto px-3 py-4 bg-white">
-          {sidebarMenu.map((group) => (
+          {dynamicSidebarMenu.map((group) => (
             <section key={group.title}>
               <p className="px-2 text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">
                 {group.title}
@@ -153,6 +176,21 @@ export function DashboardSidebar({ open, onClose }: DashboardSidebarProps) {
                 {group.items.map((item) => {
                   const Icon = item.icon
                   const active = item.href !== '#' && pathname === item.href
+                  const isExternal = item.href.startsWith('http') || item.href.startsWith('//')
+
+                  if (isExternal) {
+                    return (
+                      <a
+                        key={item.label}
+                        href={item.href}
+                        onClick={onClose}
+                        className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold uppercase tracking-[0.03em] transition text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      >
+                        <Icon className="h-4 w-4" />
+                        {item.label}
+                      </a>
+                    )
+                  }
 
                   return (
                     <Link

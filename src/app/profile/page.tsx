@@ -130,6 +130,18 @@ export default function ProfilePage() {
                 <span className="text-sm font-black text-slate-400 uppercase tracking-wider">No. Telepon / WA</span>
                 <p className="text-base sm:text-lg font-bold text-slate-800">{user.no_telpon || '-'}</p>
               </div>
+
+              {/* Jenis Kelamin */}
+              <div className="space-y-1">
+                <span className="text-sm font-black text-slate-400 uppercase tracking-wider">Jenis Kelamin</span>
+                <p className="text-base sm:text-lg font-bold text-slate-800">{(user as any).jenis_kelamin || '-'}</p>
+              </div>
+
+              {/* Alamat */}
+              <div className="space-y-1">
+                <span className="text-sm font-black text-slate-400 uppercase tracking-wider">Alamat</span>
+                <p className="text-base sm:text-lg font-bold text-slate-800">{(user as any).alamat || '-'}</p>
+              </div>
             </div>
           </div>
 
