@@ -102,10 +102,12 @@ const notificationsData = [
 
 export function DashboardSidebar({ open, onClose }: DashboardSidebarProps) {
   const pathname = usePathname()
-  const { token } = useAuthStore()
+  const { token, user } = useAuthStore()
 
   const backendBaseUrl = process.env.NEXT_PUBLIC_SIPKK_BACKEND_BASE_URL || 'http://localhost/puskesmas'
   const ssoUrl = `${backendBaseUrl.replace(/\/+$/, '')}/site/sso-login?token=${token}`
+
+  const isMasyarakat = user?.level_name?.toLowerCase().includes('masyarakat')
 
   const dynamicSidebarMenu = [
     {
@@ -118,7 +120,7 @@ export function DashboardSidebar({ open, onClose }: DashboardSidebarProps) {
     {
       title: 'Pengelolaan',
       items: [
-        { label: 'Akses Sistem', href: ssoUrl, icon: ExternalLink },
+        ...(!isMasyarakat ? [{ label: 'Akses Sistem', href: ssoUrl, icon: ExternalLink }] : []),
         { label: 'Interoperabilitas', href: '/interoperabilitas', icon: Network },
         { label: 'Pengaturan', href: '/settings', icon: Settings },
       ],
