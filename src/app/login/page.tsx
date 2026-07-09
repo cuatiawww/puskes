@@ -188,10 +188,10 @@ export default function LoginPage() {
             <Image
               src={resolveBackendAssetUrl(settings.frontend_login_logo) || "/Logo-Kemenkes.png"}
               alt="Logo Kementerian Kesehatan"
-              width={160}
-              height={58}
+              width={220}
+              height={80}
               unoptimized
-              className="h-auto w-[160px] brightness-0 invert"
+              className="h-auto w-[220px] brightness-0 invert"
               priority
             />
           </div>
@@ -232,7 +232,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* â”€â”€ RIGHT: Login Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── RIGHT: Login Panel ──────────────────────────────────────────────────────────── */}
       <section className="flex min-h-screen items-center justify-center bg-[#f0f7f7] px-5 py-8 sm:px-8 lg:bg-white">
         <div className="w-full max-w-[420px]">
 
@@ -241,10 +241,10 @@ export default function LoginPage() {
             <Image
               src={resolveBackendAssetUrl(settings.frontend_login_logo) || "/Logo-Kemenkes.png"}
               alt="Logo Kementerian Kesehatan"
-              width={140}
-              height={50}
+              width={180}
+              height={65}
               unoptimized
-              className="h-auto w-[140px]"
+              className="h-auto w-[180px]"
               priority
             />
           </div>
