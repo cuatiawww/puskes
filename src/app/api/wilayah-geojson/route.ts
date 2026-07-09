@@ -57,6 +57,45 @@ export async function GET(request: NextRequest) {
   const level = searchParams.get('level') || ''
   const province = searchParams.get('province') || ''
 
+  // 1. Try to fetch from database via Yii Backend API first
+  const BACKEND_BASE_URL = (
+    process.env.SIPKK_BACKEND_BASE_URL ||
+    process.env.NEXT_PUBLIC_SIPKK_BACKEND_BASE_URL ||
+    'http://localhost/puskesmas'
+  ).replace(/\/+$/, '')
+
+  const backendUrl = `${BACKEND_BASE_URL}/api/wilayah-geojson?level=${level}&province=${encodeURIComponent(province)}`
+
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 6000) // 6 seconds timeout
+
+    const res = await fetch(backendUrl, {
+      signal: controller.signal,
+      cache: 'no-store',
+    })
+    clearTimeout(timeoutId)
+
+    if (res.ok) {
+      const data = await res.json()
+      if (data && data.success && data.geojson) {
+        console.log(`[wilayah-geojson] Successfully loaded GeoJSON from DB backend for level=${level}, province=${province}`)
+        return NextResponse.json({
+          success: true,
+          geojson: data.geojson
+        }, {
+          status: 200,
+          headers: {
+            'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=600',
+          }
+        })
+      }
+    }
+  } catch (err) {
+    console.warn(`[wilayah-geojson] Backend fetch failed or timed out. Falling back to local geojson file. Error:`, err)
+  }
+
+  // 2. Fallback to local GeoJSON file logic
   try {
     const filePath = path.join(process.cwd(), 'public', 'indonesia-provinces.geojson')
     const fileData = await fs.readFile(filePath, 'utf8')

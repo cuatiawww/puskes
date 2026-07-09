@@ -86,6 +86,17 @@ export default function LoginPage() {
   }, [initialize])
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('logout') === '1') {
+        const { logout } = useAuthStore.getState()
+        logout(true)
+        router.replace('/login')
+      }
+    }
+  }, [router])
+
+  useEffect(() => {
     if (isInitialized && isAuthenticated) {
       router.replace('/')
     }

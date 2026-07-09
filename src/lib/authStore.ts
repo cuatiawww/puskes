@@ -52,7 +52,7 @@ interface AuthState {
   isInitialized: boolean
   login: (token: string, user: User) => void
   loginAsGuest: () => void
-  logout: () => void
+  logout: (preventRedirect?: boolean) => void
   initialize: () => void
 }
 
@@ -74,11 +74,17 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.removeItem('auth_user')
     set({ token: null, user: null, isAuthenticated: false, isGuest: true })
   },
-  logout: () => {
+  logout: (preventRedirect) => {
     localStorage.removeItem('auth_token')
     localStorage.removeItem('auth_user')
     localStorage.removeItem('auth_guest')
     set({ token: null, user: null, isAuthenticated: false, isGuest: false })
+
+    if (!preventRedirect && typeof window !== 'undefined') {
+      const backendBaseUrl = process.env.NEXT_PUBLIC_SIPKK_BACKEND_BASE_URL || 'https://puskesmas-be.mediaciptainformasi.co.id'
+      const returnUrl = `${window.location.origin}/login`
+      window.location.href = `${backendBaseUrl.replace(/\/+$/, '')}/site/logout?return=${encodeURIComponent(returnUrl)}`
+    }
   },
   initialize: () => {
     if (typeof window === 'undefined') return
