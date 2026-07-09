@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { AlertCircle, Eye, EyeOff, Loader2, LockKeyhole, LogIn, UserRound, ShieldCheck, Activity, MapPin, RefreshCw, X } from 'lucide-react'
 import { useAuthStore, type User } from '@/lib/authStore'
-import { buildApiUrl } from '@/lib/utils/api'
+import { buildApiUrl, resolveBackendAssetUrl } from '@/lib/utils/api'
 
 type LoginResponse = {
   success?: boolean
@@ -149,7 +149,7 @@ export default function LoginPage() {
       <div className="relative hidden min-h-screen overflow-hidden lg:flex lg:flex-col">
         {/* Background image */}
         <Image
-          src={settings.frontend_login_background || "/pkk.png"}
+          src={resolveBackendAssetUrl(settings.frontend_login_background) || "/pkk.png"}
           alt="Asistensi Kinerja Puskesmas"
           fill
           priority
@@ -175,7 +175,7 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="flex items-center gap-3">
             <Image
-              src={settings.frontend_login_logo || "/Logo-Kemenkes.png"}
+              src={resolveBackendAssetUrl(settings.frontend_login_logo) || "/Logo-Kemenkes.png"}
               alt="Logo Kementerian Kesehatan"
               width={160}
               height={58}
@@ -228,7 +228,7 @@ export default function LoginPage() {
           {/* Mobile-only logo */}
           <div className="mb-8 flex items-center gap-3 lg:hidden">
             <Image
-              src={settings.frontend_login_logo || "/Logo-Kemenkes.png"}
+              src={resolveBackendAssetUrl(settings.frontend_login_logo) || "/Logo-Kemenkes.png"}
               alt="Logo Kementerian Kesehatan"
               width={140}
               height={50}

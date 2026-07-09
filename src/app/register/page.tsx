@@ -4,7 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { AlertCircle, CheckCircle2, Loader2, UserPlus, ArrowLeft, Building2, Briefcase, MapPin, Phone, Mail, UserRound, LockKeyhole, KeyRound, Check, X, RefreshCw } from 'lucide-react'
-import { buildApiUrl, buildRegionsUrl } from '@/lib/utils/api'
+import { buildApiUrl, buildRegionsUrl, resolveBackendAssetUrl } from '@/lib/utils/api'
 
 type Region = {
   id: string
@@ -388,7 +388,7 @@ export default function RegisterPage() {
     <div className="relative min-h-screen overflow-hidden py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
       {/* Background image */}
       <Image
-        src={settings.frontend_register_background || "/pkk.png"}
+        src={resolveBackendAssetUrl(settings.frontend_register_background) || "/pkk.png"}
         alt="Background"
         fill
         priority
