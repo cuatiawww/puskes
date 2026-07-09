@@ -9,7 +9,7 @@
 
 const BACKEND_BASE_URL = (
   process.env.NEXT_PUBLIC_SIPKK_BACKEND_BASE_URL ||
-  'https://sipkk-new.mediaciptainformasi.co.id'
+  'https://puskesmas-be.mediaciptainformasi.co.id'
 ).replace(/\/+$/, '')
 
 /**

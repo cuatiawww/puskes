@@ -2,11 +2,11 @@ import type { NextConfig } from "next";
 
 const backendBaseUrl = (
   process.env.SIPKK_BACKEND_BASE_URL ||
-  'https://sipkk-new.mediaciptainformasi.co.id'
+  'https://puskesmas-be.mediaciptainformasi.co.id'
 ).replace(/\/+$/, '')
 
 // Extract hostname from backend base url
-let backendHostname = "sipkk-new.mediaciptainformasi.co.id";
+let backendHostname = "puskesmas-be.mediaciptainformasi.co.id";
 try {
   const url = new URL(backendBaseUrl);
   backendHostname = url.hostname;
