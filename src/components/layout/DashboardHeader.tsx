@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { useAuthStore } from '@/lib/authStore'
+import { buildApiUrl, resolveBackendAssetUrl } from '@/lib/utils/api'
 import {
   BarChart3,
   Bell,
@@ -114,15 +115,12 @@ export function DashboardSidebar({ open, onClose }: DashboardSidebarProps) {
       title: 'Menu Utama',
       items: [
         { label: 'Dashboard', href: '/', icon: Home },
-        { label: 'Profil Saya', href: '/profile', icon: UserCircle },
       ],
     },
     {
       title: 'Pengelolaan',
       items: [
-        ...(!isMasyarakat ? [{ label: 'Akses Sistem', href: ssoUrl, icon: ExternalLink }] : []),
         { label: 'Interoperabilitas', href: '/interoperabilitas', icon: Network },
-        { label: 'Pengaturan', href: '/settings', icon: Settings },
       ],
     },
   ]
@@ -228,9 +226,29 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
   const [notifOpen, setNotifOpen] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
 
-  const { user, logout, isAuthenticated } = useAuthStore()
+  const { token, user, logout, isAuthenticated } = useAuthStore()
   const [activeRegion, setActiveRegion] = useState('NASIONAL')
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [settings, setSettings] = useState<Record<string, string>>({})
+
+  const backendBaseUrl = process.env.NEXT_PUBLIC_SIPKK_BACKEND_BASE_URL || 'http://localhost/puskesmas'
+  const ssoUrl = `${backendBaseUrl.replace(/\/+$/, '')}/site/sso-login?token=${token}`
+  const isMasyarakat = user?.level_name?.toLowerCase().includes('masyarakat')
+
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const res = await fetch(buildApiUrl('/api/system-settings'))
+        const payload = await res.json()
+        if (payload?.success && payload.data) {
+          setSettings(payload.data)
+        }
+      } catch (err) {
+        console.error('Failed to fetch system settings:', err)
+      }
+    }
+    fetchSettings()
+  }, [])
 
   const handleRefresh = () => {
     setIsRefreshing(true)
@@ -309,7 +327,7 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
             </button>
             <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center md:gap-5">
               <Image
-                src="/Logo-Kemenkes.png"
+                src={resolveBackendAssetUrl(settings.frontend_login_logo) || "/Logo-Kemenkes.png"}
                 alt="Logo Kemenkes"
                 width={170}
                 height={62}
@@ -319,7 +337,7 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
               <div className="min-w-0 border-teal-200/80 md:border-l md:pl-5">
                 <h1 className="max-w-[720px] text-2xl font-extrabold leading-tight tracking-normal text-slate-900 md:text-3xl">
                   {pathname === '/' || pathname === '/dashboard-kejadian'
-                    ? 'ASISTENSI KINERJA PUSKESMAS'
+                    ? (settings.frontend_login_card_title || 'ASISTENSI KINERJA PUSKESMAS').toUpperCase()
                     : pathname === '/interoperabilitas'
                       ? 'PUSAT INTEROPERABILITAS DATA'
                       : pathname === '/settings'
@@ -328,7 +346,9 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
                 </h1>
                 <p className="mt-2 max-w-[760px] text-sm leading-relaxed text-slate-600 md:text-base">
                   {pathname === '/' || pathname === '/dashboard-kejadian'
-                    ? `Asistensi penilaian kualitas pelayanan kesehatan primer dan evaluasi capaian indikator kinerja Puskesmas secara real-time di wilayah ${activeRegion}.`
+                    ? settings.frontend_app_subtitle
+                      ? settings.frontend_app_subtitle.replace(/\$\{activeRegion\}/g, activeRegion).replace(/\{activeRegion\}/g, activeRegion)
+                      : `Asistensi penilaian kualitas pelayanan kesehatan primer dan evaluasi capaian indikator kinerja Puskesmas secara real-time di wilayah ${activeRegion}.`
                     : pathname === '/interoperabilitas'
                       ? 'Monitor aliran data integrasi SatuSehat dan status sinkronisasi sistem Kemenkes RI '
                       : pathname === '/settings'
@@ -349,6 +369,16 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
             >
               <RefreshCw className={`h-[18px] w-[18px] text-slate-600 ${isRefreshing ? 'animate-spin text-teal-650' : ''}`} />
             </button>
+            {isAuthenticated && !isMasyarakat && (
+              <a
+                href={ssoUrl}
+                className="relative inline-flex h-12 items-center gap-2 rounded-xl border border-slate-200 bg-white/95 px-4 text-xs font-bold uppercase tracking-wider text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:border-teal-200 hover:text-teal-700 hover:shadow-md"
+                title="Akses Sistem"
+              >
+                <ExternalLink className="h-4.5 w-4.5 text-slate-600" />
+                <span>Akses Sistem</span>
+              </a>
+            )}
             <div className="relative" ref={notifRef}>
               <button
                 type="button"
