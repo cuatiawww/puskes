@@ -112,13 +112,15 @@ export function DashboardSidebar({ open, onClose }: DashboardSidebarProps) {
 
   const dynamicSidebarMenu = [
     {
-      title: 'Menu Utama',
+      title: 'Dashboard',
+      className: 'px-2 text-[11.5px] font-extrabold uppercase tracking-[0.05em] text-slate-600',
       items: [
         { label: 'Dashboard', href: '/', icon: Home },
       ],
     },
     {
-      title: 'Pengelolaan',
+      title: 'Tentang Dashboard',
+      className: 'px-2 text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400',
       items: [
         { label: 'Interoperabilitas', href: '/interoperabilitas', icon: Network },
       ],
@@ -169,7 +171,7 @@ export function DashboardSidebar({ open, onClose }: DashboardSidebarProps) {
         <nav className="h-[calc(100vh-80px)] space-y-5 overflow-y-auto px-3 py-4 bg-white">
           {dynamicSidebarMenu.map((group) => (
             <section key={group.title}>
-              <p className="px-2 text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">
+              <p className={group.className || "px-2 text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400"}>
                 {group.title}
               </p>
               <div className="mt-2 space-y-1.5">
@@ -327,7 +329,7 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
             </button>
             <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center md:gap-5">
               <Image
-                src={resolveBackendAssetUrl(settings.frontend_login_logo) || "/Logo-Kemenkes.png"}
+                src={resolveBackendAssetUrl(settings.dashboard_header_logo) || "/Logo-Kemenkes.png"}
                 alt="Logo Kemenkes"
                 width={170}
                 height={62}
@@ -337,7 +339,7 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
               <div className="min-w-0 border-teal-200/80 md:border-l md:pl-5">
                 <h1 className="max-w-[720px] text-2xl font-extrabold leading-tight tracking-normal text-slate-900 md:text-3xl">
                   {pathname === '/' || pathname === '/dashboard-kejadian'
-                    ? (settings.frontend_login_card_title || 'ASISTENSI KINERJA PUSKESMAS').toUpperCase()
+                    ? (settings.dashboard_header_title || 'ASISTENSI KINERJA PUSKESMAS').toUpperCase()
                     : pathname === '/interoperabilitas'
                       ? 'PUSAT INTEROPERABILITAS DATA'
                       : pathname === '/settings'
@@ -346,8 +348,8 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
                 </h1>
                 <p className="mt-2 max-w-[760px] text-sm leading-relaxed text-slate-600 md:text-base">
                   {pathname === '/' || pathname === '/dashboard-kejadian'
-                    ? settings.frontend_app_subtitle
-                      ? settings.frontend_app_subtitle.replace(/\$\{activeRegion\}/g, activeRegion).replace(/\{activeRegion\}/g, activeRegion)
+                    ? settings.dashboard_header_subtitle
+                      ? settings.dashboard_header_subtitle.replace(/\$\{activeRegion\}/g, activeRegion).replace(/\{activeRegion\}/g, activeRegion)
                       : `Asistensi penilaian kualitas pelayanan kesehatan primer dan evaluasi capaian indikator kinerja Puskesmas secara real-time di wilayah ${activeRegion}.`
                     : pathname === '/interoperabilitas'
                       ? 'Monitor aliran data integrasi SatuSehat dan status sinkronisasi sistem Kemenkes RI '
