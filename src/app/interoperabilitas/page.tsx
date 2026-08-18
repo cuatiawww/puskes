@@ -72,10 +72,10 @@ export default function InteroperabilityPage() {
       endpoint: 'https://api.kemkes.go.id/v1/sisdmk/faskes/7505001',
       schedule: 'Setiap tanggal 1 (Bulanan)',
       variables: 'SDM Kesehatan (Kelengkapan 4 Jenis, 9 Jenis, dan 11 Jenis Tenaga Medis/Kesehatan)',
-      status: 'Terhubung',
+      status: 'Menunggu Sinkronisasi',
       lastSync: '01 Juli 2026 00:05 WIB',
       recordCount: '6.566 Faskes Terpetakan',
-      color: 'teal',
+      color: 'amber',
     },
     {
       id: 'aspak',
@@ -86,10 +86,10 @@ export default function InteroperabilityPage() {
       endpoint: 'https://aspak.kemkes.go.id/api/v2/monitoring/kelayakan-spa',
       schedule: 'Setiap tanggal 6 (Bulanan)',
       variables: 'SPA (Persentase kelayakan minimal 60% Sarana, Prasarana, dan Alat Kesehatan)',
-      status: 'Terhubung',
+      status: 'Menunggu Sinkronisasi',
       lastSync: '26 Juni 2026 04:12 WIB',
       recordCount: '2.645 Faskes Terpetakan',
-      color: 'teal',
+      color: 'amber',
     },
     {
       id: 'smile',
@@ -99,7 +99,7 @@ export default function InteroperabilityPage() {
       method: 'Excel Aliran Data',
       schedule: 'Awal Bulan',
       variables: 'PERBEKES (Ketersediaan 40 jenis obat esensial dan BMHP CKG di tingkat Puskesmas)',
-      status: 'Perlu Sinkronisasi',
+      status: 'Menunggu Sinkronisasi',
       lastSync: '02 Juni 2026 14:35 WIB',
       recordCount: '1.102 Logistik Obat Valid',
       color: 'amber',
@@ -112,10 +112,10 @@ export default function InteroperabilityPage() {
       method: 'Excel Aliran Data',
       schedule: 'Setiap tanggal 6 (Bulanan)',
       variables: 'Tata Kelola (Status BLUD, integrasi ILP, penilaian kinerja PKP, dan 10 Penyakit Terbanyak)',
-      status: 'Terhubung',
+      status: 'Menunggu Sinkronisasi',
       lastSync: '26 Juni 2026 08:30 WIB',
       recordCount: '7.406 Faskes Berstatus BLUD',
-      color: 'teal',
+      color: 'amber',
     },
     {
       id: 'regpus',
@@ -125,10 +125,10 @@ export default function InteroperabilityPage() {
       method: 'Database Link (Regpus Server)',
       schedule: 'Real-time / Harian',
       variables: 'Profil Faskes, Status Pelayanan (Ranap/Non Ranap), Perizinan Operasional, dan Kategori Wilayah',
-      status: 'Terhubung',
+      status: 'Menunggu Sinkronisasi',
       lastSync: '02 Juli 2026 06:00 WIB',
       recordCount: '9.831 Profil Puskesmas Aktif',
-      color: 'teal',
+      color: 'amber',
     },
   ]
 
@@ -234,8 +234,8 @@ export default function InteroperabilityPage() {
                       <td className="py-5 px-4 text-center">
                         <div className="flex flex-col items-center gap-1">
                           <span className={`inline-flex items-center rounded-lg border px-2.5 py-0.5 text-[10.5px] font-black uppercase tracking-wider ${sys.color === 'teal'
-                            ? 'bg-emerald-55 text-emerald-700 border-emerald-150'
-                            : 'bg-amber-55 text-amber-700 border-amber-150 animate-pulse'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : 'bg-amber-50 text-amber-700 border-amber-200'
                             }`}>
                             {sys.status}
                           </span>
